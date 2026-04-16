@@ -12,5 +12,8 @@
   },
   "enabledPlugins": {
     "dotnet-skills@dotnet-skills": true
+  },
+  "attribution": {
+    "commit": ""
   }
 }
