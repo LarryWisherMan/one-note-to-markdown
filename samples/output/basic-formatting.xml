@@ -1,44 +1,45 @@
-<Page name="Basic Formatting Test" xmlns="http://schemas.microsoft.com/office/onenote/2013/onenote">
-  <Title>
-    <OE>
-      <T><![CDATA[Basic Formatting Test]]></T>
-    </OE>
-  </Title>
-  <Outline>
-    <OEChildren>
-      <OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
-        <T><![CDATA[Basic Formatting Test]]></T>
-        <OEChildren>
-          <OE>
-            <T><![CDATA[This page tests inline formatting.]]></T>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Text Styles]]></T>
-            <OEChildren>
-              <OE>
-                <T><![CDATA[This is <b>bold text</b>, this is <i>italic text</i>, and this is <del>strikethrough text</del>.]]></T>
-              </OE>
-              <OE>
-                <T><![CDATA[You can also combine them: <i><b>bold and italic</b></i> together.]]></T>
-              </OE>
-              <OE>
-                <T><![CDATA[Use <span style='font-family:Consolas;font-size:9pt'>inline code</span> for short snippets.]]></T>
-              </OE>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Links]]></T>
-            <OEChildren>
-              <OE>
-                <T><![CDATA[Visit <a href="https://www.onenote.com">Microsoft OneNote</a> for more info.]]></T>
-              </OE>
-              <OE>
-                <T><![CDATA[Here is a <a href="https://example.com/path?q=hello&amp;lang=en">link with special chars</a>.]]></T>
-              </OE>
-            </OEChildren>
-          </OE>
-        </OEChildren>
-      </OE>
-    </OEChildren>
-  </Outline>
-</Page>
+<?xml version="1.0" encoding="utf-8"?>
+<one:Page xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" name="Basic Formatting Test">
+  <one:Title>
+    <one:OE>
+      <one:T><![CDATA[Basic Formatting Test]]></one:T>
+    </one:OE>
+  </one:Title>
+  <one:Outline>
+    <one:OEChildren>
+      <one:OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
+        <one:T><![CDATA[Basic Formatting Test]]></one:T>
+        <one:OEChildren>
+          <one:OE>
+            <one:T><![CDATA[This page tests inline formatting.]]></one:T>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Text Styles]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:T><![CDATA[This is <b>bold text</b>, this is <i>italic text</i>, and this is <del>strikethrough text</del>.]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:T><![CDATA[You can also combine them: <i><b>bold and italic</b></i> together.]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:T><![CDATA[Use <span style='font-family:Consolas;font-size:9pt'>inline code</span> for short snippets.]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Links]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:T><![CDATA[Visit <a href="https://www.onenote.com">Microsoft OneNote</a> for more info.]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:T><![CDATA[Here is a <a href="https://example.com/path?q=hello&amp;lang=en">link with special chars</a>.]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+        </one:OEChildren>
+      </one:OE>
+    </one:OEChildren>
+  </one:Outline>
+</one:Page>

@@ -471,7 +471,7 @@ public class MarkdownToOneNoteXmlConverterTests
             var markdown = "![Alt](missing.png)";
             var result = _converter.Convert(markdown, pageTitle: "Test", basePath: tempDir);
 
-            result.Should().Contain("[Image not found: missing.png]");
+            result.Should().Contain("(Image not found: missing.png)");
         }
         finally
         {
@@ -588,7 +588,7 @@ var x = 42;
 
         // Should have placeholder for missing image
         doc.Descendants(OneNs + "T").Select(t => t.Value)
-            .Should().Contain(t => t.Contains("[Image not found:"));
+            .Should().Contain(t => t.Contains("(Image not found:"));
     }
 
     [Fact]

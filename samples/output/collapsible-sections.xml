@@ -1,238 +1,233 @@
-<Page name="Project Documentation" xmlns="http://schemas.microsoft.com/office/onenote/2013/onenote">
-  <Title>
-    <OE>
-      <T><![CDATA[Project Documentation]]></T>
-    </OE>
-  </Title>
-  <Outline>
-    <OEChildren>
-      <OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
-        <T><![CDATA[Project Documentation]]></T>
-        <OEChildren>
-          <OE>
-            <T><![CDATA[This is the top-level introduction. Everything below should nest under its heading.]]></T>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Getting Started]]></T>
-            <OEChildren>
-              <OE>
-                <T><![CDATA[Follow these steps to set up the project.]]></T>
-              </OE>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Clone the repository]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Run <span style='font-family:Consolas;font-size:9pt'>dotnet restore</span>]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Run <span style='font-family:Consolas;font-size:9pt'>dotnet build</span>]]></T>
-                </OE>
-              </OEChildren>
-              <OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <T><![CDATA[Prerequisites]]></T>
-                <OEChildren>
-                  <OEChildren>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[.NET 10.0 SDK]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Windows 10 or 11]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[OneNote desktop app]]></T>
-                    </OE>
-                  </OEChildren>
-                </OEChildren>
-              </OE>
-              <OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <T><![CDATA[Configuration]]></T>
-                <OEChildren>
-                  <OE>
-                    <T><![CDATA[No configuration needed for basic usage. The defaults are:]]></T>
-                  </OE>
-                  <Table bordersVisible="true">
-                    <Columns>
-                      <Column index="0" width="300" />
-                      <Column index="1" width="300" />
-                    </Columns>
-                    <Row>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[<b>Setting</b>]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[<b>Default</b>]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                    </Row>
-                    <Row>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Body font]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Segoe UI 11pt]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                    </Row>
-                    <Row>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Code font]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Consolas 9pt]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                    </Row>
-                    <Row>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Collapsible]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[Enabled]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                    </Row>
-                  </Table>
-                </OEChildren>
-              </OE>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[API Reference]]></T>
-            <OEChildren>
-              <OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <T><![CDATA[ImportService]]></T>
-                <OEChildren>
-                  <OE>
-                    <T><![CDATA[The <span style='font-family:Consolas;font-size:9pt'>ImportService</span> class orchestrates the import flow.]]></T>
-                  </OE>
-                  <Table bordersVisible="true">
-                    <Columns>
-                      <Column index="0" width="600" />
-                    </Columns>
-                    <Row>
-                      <Cell>
-                        <OEChildren>
-                          <OE>
-                            <T><![CDATA[<span style='font-family:Consolas;font-size:9pt'>var service = new ImportService(oneNoteService, converter);<br/>var result = await service.ImportAsync(options, progress, token);</span>]]></T>
-                          </OE>
-                        </OEChildren>
-                      </Cell>
-                    </Row>
-                  </Table>
-                </OEChildren>
-              </OE>
-              <OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <T><![CDATA[MarkdownToOneNoteXmlConverter]]></T>
-                <OEChildren>
-                  <OE>
-                    <T><![CDATA[Converts Markdown to OneNote page XML.]]></T>
-                  </OE>
-                  <OEChildren>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Input: Markdown string]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Output: OneNote XML string]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Supports: headings, lists, tables, code blocks, images]]></T>
-                    </OE>
-                  </OEChildren>
-                </OEChildren>
-              </OE>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Troubleshooting]]></T>
-            <OEChildren>
-              <OEChildren>
-                <OE>
-                  <T><![CDATA[<i>If OneNote is not responding, try restarting the desktop app.</i>]]></T>
-                </OE>
-              </OEChildren>
-              <OE>
-                <T><![CDATA[Common issues:]]></T>
-              </OE>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[<b>COM error</b> - OneNote must be running]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[<b>Section not found</b> - Check notebook/section names are correct]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[<b>DLP blocked</b> - This tool bypasses DLP by using <span style='font-family:Consolas;font-size:9pt'>GetPageContent</span> directly]]></T>
-                </OE>
-              </OEChildren>
-            </OEChildren>
-          </OE>
-        </OEChildren>
-      </OE>
-    </OEChildren>
-  </Outline>
-</Page>
+<?xml version="1.0" encoding="utf-8"?>
+<one:Page xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" name="Project Documentation">
+  <one:Title>
+    <one:OE>
+      <one:T><![CDATA[Project Documentation]]></one:T>
+    </one:OE>
+  </one:Title>
+  <one:Outline>
+    <one:OEChildren>
+      <one:OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
+        <one:T><![CDATA[Project Documentation]]></one:T>
+        <one:OEChildren>
+          <one:OE>
+            <one:T><![CDATA[This is the top-level introduction. Everything below should nest under its heading.]]></one:T>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Getting Started]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:T><![CDATA[Follow these steps to set up the project.]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Clone the repository]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Run <span style='font-family:Consolas;font-size:9pt'>dotnet restore</span>]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Run <span style='font-family:Consolas;font-size:9pt'>dotnet build</span>]]></one:T>
+              </one:OE>
+              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
+                <one:T><![CDATA[Prerequisites]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[.NET 10.0 SDK]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Windows 10 or 11]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[OneNote desktop app]]></one:T>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
+                <one:T><![CDATA[Configuration]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:T><![CDATA[No configuration needed for basic usage. The defaults are:]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:Table bordersVisible="true">
+                      <one:Columns>
+                        <one:Column index="0" width="300" />
+                        <one:Column index="1" width="300" />
+                      </one:Columns>
+                      <one:Row>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[<b>Setting</b>]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[<b>Default</b>]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                      </one:Row>
+                      <one:Row>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Body font]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Segoe UI 11pt]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                      </one:Row>
+                      <one:Row>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Code font]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Consolas 9pt]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                      </one:Row>
+                      <one:Row>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Collapsible]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[Enabled]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                      </one:Row>
+                    </one:Table>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[API Reference]]></one:T>
+            <one:OEChildren>
+              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
+                <one:T><![CDATA[ImportService]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:T><![CDATA[The <span style='font-family:Consolas;font-size:9pt'>ImportService</span> class orchestrates the import flow.]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:Table bordersVisible="true">
+                      <one:Columns>
+                        <one:Column index="0" width="600" />
+                      </one:Columns>
+                      <one:Row>
+                        <one:Cell>
+                          <one:OEChildren>
+                            <one:OE>
+                              <one:T><![CDATA[<span style='font-family:Consolas;font-size:9pt'>var service = new ImportService(oneNoteService, converter);<br/>var result = await service.ImportAsync(options, progress, token);</span>]]></one:T>
+                            </one:OE>
+                          </one:OEChildren>
+                        </one:Cell>
+                      </one:Row>
+                    </one:Table>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
+                <one:T><![CDATA[MarkdownToOneNoteXmlConverter]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:T><![CDATA[Converts Markdown to OneNote page XML.]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Input: Markdown string]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Output: OneNote XML string]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Supports: headings, lists, tables, code blocks, images]]></one:T>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Troubleshooting]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:T><![CDATA[<i>If OneNote is not responding, try restarting the desktop app.</i>]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:T><![CDATA[Common issues:]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[<b>COM error</b> - OneNote must be running]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[<b>Section not found</b> - Check notebook/section names are correct]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[<b>DLP blocked</b> - This tool bypasses DLP by using <span style='font-family:Consolas;font-size:9pt'>GetPageContent</span> directly]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+        </one:OEChildren>
+      </one:OE>
+    </one:OEChildren>
+  </one:Outline>
+</one:Page>

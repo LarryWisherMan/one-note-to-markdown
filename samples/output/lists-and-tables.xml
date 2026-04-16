@@ -1,273 +1,268 @@
-<Page name="Lists and Tables" xmlns="http://schemas.microsoft.com/office/onenote/2013/onenote">
-  <Title>
-    <OE>
-      <T><![CDATA[Lists and Tables]]></T>
-    </OE>
-  </Title>
-  <Outline>
-    <OEChildren>
-      <OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
-        <T><![CDATA[Lists and Tables]]></T>
-        <OEChildren>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Bullet Lists]]></T>
-            <OEChildren>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Bullet bullet="2" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[First item]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Bullet bullet="2" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Second item]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Bullet bullet="2" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Third item with <b>bold</b>]]></T>
-                </OE>
-              </OEChildren>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Nested Bullets]]></T>
-            <OEChildren>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Bullet bullet="2" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Parent item]]></T>
-                  <OEChildren>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Child item A]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Child item B]]></T>
-                      <OEChildren>
-                        <OE>
-                          <List>
-                            <Bullet bullet="2" fontSize="11.0" />
-                          </List>
-                          <T><![CDATA[Grandchild]]></T>
-                        </OE>
-                      </OEChildren>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Bullet bullet="2" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Child item C]]></T>
-                    </OE>
-                  </OEChildren>
-                </OE>
-                <OE>
-                  <List>
-                    <Bullet bullet="2" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Another parent]]></T>
-                </OE>
-              </OEChildren>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Numbered Lists]]></T>
-            <OEChildren>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Step one]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Step two]]></T>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Step three]]></T>
-                </OE>
-              </OEChildren>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Nested Numbers]]></T>
-            <OEChildren>
-              <OEChildren>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[First thing]]></T>
-                  <OEChildren>
-                    <OE>
-                      <List>
-                        <Number numberSequence="0" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Sub-step A]]></T>
-                    </OE>
-                    <OE>
-                      <List>
-                        <Number numberSequence="0" fontSize="11.0" />
-                      </List>
-                      <T><![CDATA[Sub-step B]]></T>
-                    </OE>
-                  </OEChildren>
-                </OE>
-                <OE>
-                  <List>
-                    <Number numberSequence="0" fontSize="11.0" />
-                  </List>
-                  <T><![CDATA[Second thing]]></T>
-                </OE>
-              </OEChildren>
-            </OEChildren>
-          </OE>
-          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <T><![CDATA[Tables]]></T>
-            <OEChildren>
-              <Table bordersVisible="true">
-                <Columns>
-                  <Column index="0" width="200" />
-                  <Column index="1" width="200" />
-                  <Column index="2" width="200" />
-                </Columns>
-                <Row>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[<b>Feature</b>]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[<b>Status</b>]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[<b>Notes</b>]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                </Row>
-                <Row>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Headings]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Done]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[H1-H6 supported]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                </Row>
-                <Row>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Lists]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Done]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Flat and nested]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                </Row>
-                <Row>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Tables]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Done]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Bold headers]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                </Row>
-                <Row>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Images]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Done]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                  <Cell>
-                    <OEChildren>
-                      <OE>
-                        <T><![CDATA[Local base64]]></T>
-                      </OE>
-                    </OEChildren>
-                  </Cell>
-                </Row>
-              </Table>
-            </OEChildren>
-          </OE>
-        </OEChildren>
-      </OE>
-    </OEChildren>
-  </Outline>
-</Page>
+<?xml version="1.0" encoding="utf-8"?>
+<one:Page xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" name="Lists and Tables">
+  <one:Title>
+    <one:OE>
+      <one:T><![CDATA[Lists and Tables]]></one:T>
+    </one:OE>
+  </one:Title>
+  <one:Outline>
+    <one:OEChildren>
+      <one:OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
+        <one:T><![CDATA[Lists and Tables]]></one:T>
+        <one:OEChildren>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Bullet Lists]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:List>
+                  <one:Bullet bullet="2" fontSize="11.0" />
+                </one:List>
+                <one:T><![CDATA[First item]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Bullet bullet="2" fontSize="11.0" />
+                </one:List>
+                <one:T><![CDATA[Second item]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Bullet bullet="2" fontSize="11.0" />
+                </one:List>
+                <one:T><![CDATA[Third item with <b>bold</b>]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Nested Bullets]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:List>
+                  <one:Bullet bullet="2" fontSize="11.0" />
+                </one:List>
+                <one:T><![CDATA[Parent item]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Child item A]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Child item B]]></one:T>
+                    <one:OEChildren>
+                      <one:OE>
+                        <one:List>
+                          <one:Bullet bullet="2" fontSize="11.0" />
+                        </one:List>
+                        <one:T><![CDATA[Grandchild]]></one:T>
+                      </one:OE>
+                    </one:OEChildren>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Bullet bullet="2" fontSize="11.0" />
+                    </one:List>
+                    <one:T><![CDATA[Child item C]]></one:T>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Bullet bullet="2" fontSize="11.0" />
+                </one:List>
+                <one:T><![CDATA[Another parent]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Numbered Lists]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Step one]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Step two]]></one:T>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Step three]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Nested Numbers]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[First thing]]></one:T>
+                <one:OEChildren>
+                  <one:OE>
+                    <one:List>
+                      <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                    </one:List>
+                    <one:T><![CDATA[Sub-step A]]></one:T>
+                  </one:OE>
+                  <one:OE>
+                    <one:List>
+                      <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                    </one:List>
+                    <one:T><![CDATA[Sub-step B]]></one:T>
+                  </one:OE>
+                </one:OEChildren>
+              </one:OE>
+              <one:OE>
+                <one:List>
+                  <one:Number numberSequence="0" numberFormat="##." fontSize="11.0" font="Segoe UI" />
+                </one:List>
+                <one:T><![CDATA[Second thing]]></one:T>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <one:T><![CDATA[Tables]]></one:T>
+            <one:OEChildren>
+              <one:OE>
+                <one:Table bordersVisible="true">
+                  <one:Columns>
+                    <one:Column index="0" width="200" />
+                    <one:Column index="1" width="200" />
+                    <one:Column index="2" width="200" />
+                  </one:Columns>
+                  <one:Row>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[<b>Feature</b>]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[<b>Status</b>]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[<b>Notes</b>]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                  </one:Row>
+                  <one:Row>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Headings]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Done]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[H1-H6 supported]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                  </one:Row>
+                  <one:Row>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Lists]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Done]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Flat and nested]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                  </one:Row>
+                  <one:Row>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Tables]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Done]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Bold headers]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                  </one:Row>
+                  <one:Row>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Images]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Done]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                    <one:Cell>
+                      <one:OEChildren>
+                        <one:OE>
+                          <one:T><![CDATA[Local base64]]></one:T>
+                        </one:OE>
+                      </one:OEChildren>
+                    </one:Cell>
+                  </one:Row>
+                </one:Table>
+              </one:OE>
+            </one:OEChildren>
+          </one:OE>
+        </one:OEChildren>
+      </one:OE>
+    </one:OEChildren>
+  </one:Outline>
+</one:Page>

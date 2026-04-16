@@ -91,17 +91,39 @@ namespace OneNoteMarkdownExporter.Services
                 return;
             }
 
-            var newPageId = _oneNoteService.CreatePage(sectionId!);
+            var newPageId = RetryComCall(() => _oneNoteService.CreatePage(sectionId!));
 
+            // Insert page ID — the XML uses one: prefix from the converter
             var xmlWithId = pageXml.Replace("<one:Page ", $"<one:Page ID=\"{newPageId}\" ");
 
-            _oneNoteService.UpdatePageContent(xmlWithId);
+            RetryComCall(() => { _oneNoteService.UpdatePageContent(xmlWithId); return 0; });
             result.ImportedPages++;
 
             if (options.Verbose)
             {
                 progress?.Report($"  Created page: {fileName} (ID: {newPageId})");
             }
+        }
+
+        /// <summary>
+        /// Retries a COM call when OneNote returns RPC_E_SERVERCALL_RETRYLATER (0x8001010A),
+        /// which indicates OneNote is temporarily busy.
+        /// </summary>
+        private static T RetryComCall<T>(Func<T> call, int maxAttempts = 5)
+        {
+            const int busyHResult = unchecked((int)0x8001010A);
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    return call();
+                }
+                catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == busyHResult && attempt < maxAttempts)
+                {
+                    System.Threading.Thread.Sleep(200 * attempt);
+                }
+            }
+            return call();
         }
     }
 }

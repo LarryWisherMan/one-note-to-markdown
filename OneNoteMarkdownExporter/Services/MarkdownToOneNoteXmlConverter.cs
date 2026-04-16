@@ -63,8 +63,9 @@ public class MarkdownToOneNoteXmlConverter
         // Build content elements
         var contentElements = ConvertBlocks(document, collapsible);
 
-        // Build the page XML
+        // Build the page XML with explicit one: prefix (required by OneNote COM API)
         var page = new XElement(OneNs + "Page",
+            new XAttribute(XNamespace.Xmlns + "one", OneNs.NamespaceName),
             new XAttribute("name", resolvedTitle),
             new XElement(OneNs + "Title",
                 new XElement(OneNs + "OE",
@@ -77,7 +78,7 @@ public class MarkdownToOneNoteXmlConverter
             new XDeclaration("1.0", "utf-8", null),
             page);
 
-        return doc.ToString();
+        return doc.Declaration + "\n" + doc.Root!.ToString();
     }
 
     /// <summary>
@@ -109,6 +110,59 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
+    /// Adds a converted element to a list, unwrapping OEChildren containers
+    /// so their children become direct siblings instead of nested containers.
+    /// </summary>
+    private void AddElement(List<XElement> target, XElement? element)
+    {
+        if (element == null) return;
+
+        // If the element is a bare OEChildren, unwrap it — its children
+        // should be siblings in the parent OEChildren, not nested.
+        if (element.Name == OneNs + "OEChildren" && element.Parent == null)
+        {
+            foreach (var child in element.Elements().ToList())
+            {
+                child.Remove();
+                target.Add(child);
+            }
+        }
+        else
+        {
+            target.Add(element);
+        }
+    }
+
+    /// <summary>
+    /// Wraps an element (like Table) inside an OE, as required by OneNote XML schema.
+    /// </summary>
+    private XElement WrapInOe(XElement element)
+    {
+        return new XElement(OneNs + "OE", element);
+    }
+
+    /// <summary>
+    /// Same as AddElement but for an XElement target (e.g., an OEChildren container).
+    /// </summary>
+    private void AddElementToXContainer(XElement target, XElement? element)
+    {
+        if (element == null) return;
+
+        if (element.Name == OneNs + "OEChildren" && element.Parent == null)
+        {
+            foreach (var child in element.Elements().ToList())
+            {
+                child.Remove();
+                target.Add(child);
+            }
+        }
+        else
+        {
+            target.Add(element);
+        }
+    }
+
+    /// <summary>
     /// Flat conversion: each block becomes a top-level OE.
     /// </summary>
     private List<XElement> ConvertBlocksFlat(MarkdownDocument document)
@@ -116,11 +170,7 @@ public class MarkdownToOneNoteXmlConverter
         var elements = new List<XElement>();
         foreach (var block in document)
         {
-            var el = ConvertBlock(block);
-            if (el != null)
-            {
-                elements.Add(el);
-            }
+            AddElement(elements, ConvertBlock(block));
         }
         return elements;
     }
@@ -173,11 +223,12 @@ public class MarkdownToOneNoteXmlConverter
                 {
                     if (stack.Count > 0)
                     {
-                        stack.Peek().Children.Add(el);
+                        // Unwrap OEChildren so list items become siblings, not nested containers
+                        AddElementToXContainer(stack.Peek().Children, el);
                     }
                     else
                     {
-                        topLevel.Add(el);
+                        AddElement(topLevel, el);
                     }
                 }
             }
@@ -207,9 +258,9 @@ public class MarkdownToOneNoteXmlConverter
             {
                 HeadingBlock heading => CreateHeadingOe(heading),
                 ParagraphBlock paragraph => CreateParagraphOe(paragraph),
-                FencedCodeBlock codeBlock => CreateCodeBlockElement(codeBlock),
+                FencedCodeBlock codeBlock => WrapInOe(CreateCodeBlockElement(codeBlock)),
                 ListBlock listBlock => CreateListElements(listBlock),
-                Markdig.Extensions.Tables.Table table => CreateTableElement(table),
+                Markdig.Extensions.Tables.Table table => WrapInOe(CreateTableElement(table)),
                 QuoteBlock quoteBlock => CreateBlockquoteElement(quoteBlock),
                 ThematicBreakBlock => CreateHorizontalRuleElement(),
                 // Skip metadata blocks that have no visual content
@@ -260,11 +311,12 @@ public class MarkdownToOneNoteXmlConverter
         var pending = _pendingImageElements;
         _pendingImageElements = null;
 
+        // Wrap each image element in an OE (OneNote schema requires Image to be inside OE)
         if (pending.Count > 0 && string.IsNullOrWhiteSpace(html))
         {
-            if (pending.Count == 1) return pending[0];
+            if (pending.Count == 1) return new XElement(OneNs + "OE", pending[0]);
             var container = new XElement(OneNs + "OEChildren");
-            foreach (var img in pending) container.Add(img);
+            foreach (var img in pending) container.Add(new XElement(OneNs + "OE", img));
             return container;
         }
 
@@ -275,7 +327,7 @@ public class MarkdownToOneNoteXmlConverter
         if (pending.Count > 0)
         {
             var container = new XElement(OneNs + "OEChildren", oe);
-            foreach (var img in pending) container.Add(img);
+            foreach (var img in pending) container.Add(new XElement(OneNs + "OE", img));
             return container;
         }
 
@@ -318,22 +370,41 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
-    /// Creates an OEChildren container for a list block (bullet or numbered).
+    /// Creates a wrapper OE containing all list items as children.
+    /// Top-level lists return a single OE with list items inside OEChildren,
+    /// which is valid as a direct child of another OEChildren.
     /// </summary>
     private XElement CreateListElements(ListBlock listBlock)
     {
-        var container = new XElement(OneNs + "OEChildren");
-
+        // Build list items as OE elements
+        var items = new List<XElement>();
         foreach (var item in listBlock)
         {
             if (item is ListItemBlock listItem)
             {
-                var oe = CreateListItemElement(listItem, listBlock.IsOrdered);
-                container.Add(oe);
+                items.Add(CreateListItemElement(listItem, listBlock.IsOrdered));
             }
         }
 
-        return container;
+        // Wrap in an OEChildren so this can be placed inside an OE (for nesting)
+        // or directly as content
+        return new XElement(OneNs + "OEChildren", items);
+    }
+
+    /// <summary>
+    /// Returns individual list item OE elements (for embedding in an existing OEChildren).
+    /// </summary>
+    private List<XElement> CreateListItemElements(ListBlock listBlock)
+    {
+        var items = new List<XElement>();
+        foreach (var item in listBlock)
+        {
+            if (item is ListItemBlock listItem)
+            {
+                items.Add(CreateListItemElement(listItem, listBlock.IsOrdered));
+            }
+        }
+        return items;
     }
 
     /// <summary>
@@ -348,7 +419,9 @@ public class MarkdownToOneNoteXmlConverter
             oe.Add(new XElement(OneNs + "List",
                 new XElement(OneNs + "Number",
                     new XAttribute("numberSequence", "0"),
-                    new XAttribute("fontSize", "11.0")
+                    new XAttribute("numberFormat", "##."),
+                    new XAttribute("fontSize", "11.0"),
+                    new XAttribute("font", "Segoe UI")
                 )
             ));
         }
@@ -570,13 +643,13 @@ public class MarkdownToOneNoteXmlConverter
             url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            return $"[Image: {System.Net.WebUtility.HtmlEncode(altText)} ({System.Net.WebUtility.HtmlEncode(url)})]";
+            return $"(Image: {System.Net.WebUtility.HtmlEncode(altText)} - {System.Net.WebUtility.HtmlEncode(url)})";
         }
 
         var fullPath = Path.Combine(_basePath, url);
         if (!File.Exists(fullPath))
         {
-            return $"[Image not found: {System.Net.WebUtility.HtmlEncode(url)}]";
+            return $"(Image not found: {System.Net.WebUtility.HtmlEncode(url)})";
         }
 
         var bytes = File.ReadAllBytes(fullPath);
