@@ -5,25 +5,39 @@ history stays navigable and a future contributor (or fork) can follow along.
 
 ## Development workflow
 
-**Trunk-based.** `master` is always green. Short-lived topic branches for
-anything bigger than a one-line fix; merge/squash back into `master` when
-done. No long-running `develop` branch, no release branches.
+**Trunk-based with PR-based squash merges.** `master` is always green
+and carries one commit per PR — no long-running `develop` branch, no
+release branches, no direct pushes for anything bigger than a
+readme-typo fix.
 
 ```bash
 git checkout -b feat/importer-image-sizing
-# ...work, commit, test...
-git checkout master
-git merge --squash feat/importer-image-sizing
-git commit
+# ...work, commit freely on the branch...
+git push -u origin feat/importer-image-sizing
+gh pr create --fill
+# Review, update CHANGELOG [Unreleased], then "Squash and merge" in the UI
 ```
 
-Rebase on top of `master` before merging when the branch goes more than
-a day or two without sync.
+On GitHub, use the **Squash and merge** option — never **Create a merge
+commit** or **Rebase and merge**. The PR's squashed commit becomes the
+single entry on `master`, so:
+
+- **The PR title becomes the commit message on `master`.** It must
+  follow Conventional Commits (see below). GitHub offers to edit the
+  squashed message at merge time; keep it aligned with the PR title.
+- **Intermediate commits on the branch don't need to follow any
+  convention** — commit as messily as you like while working; only
+  the PR title matters once squashed.
+- **Delete the source branch after merge** (GitHub has a repo setting
+  for this). Branches are ephemeral — the history lives on `master`.
+
+Rebase onto `master` if your branch gets more than a day or two behind.
 
 ## Commit messages — Conventional Commits
 
-Commit subjects use [Conventional Commits](https://www.conventionalcommits.org/).
-GitVersion reads these to compute the next semver.
+**The PR title** (which becomes the squashed commit on `master`) uses
+[Conventional Commits](https://www.conventionalcommits.org/). GitVersion
+parses it to compute the next semver.
 
 ```
 <type>(<scope>): <summary>
@@ -50,8 +64,11 @@ Common types used in this repo:
 Breaking changes: add `!` after the type (`feat(importer)!: drop --no-collapse`)
 or a `BREAKING CHANGE:` footer. Both trigger a **major** bump.
 
-Keep commits focused — one logical change per commit — so reverts stay
-clean.
+**One PR = one logical change.** Because every PR squashes to a single
+commit on `master`, reverting a change means reverting its PR's
+squashed commit. Resist the urge to pile unrelated fixes into one
+branch — if you find yourself wanting a compound subject like
+`feat(x): add y and fix z`, that's two PRs.
 
 ## Versioning — GitVersion
 
@@ -73,8 +90,41 @@ dotnet-gitversion /showvariable SemVer         # just the semver string
 naive patch-increment tagger (`git describe --tags` + `++patch`). That
 predates the GitVersion setup and will disagree once CI is re-enabled.
 Reconcile by replacing the "Get latest tag and increment version" step
-with a `gittools/actions/gitversion/execute@v3` call before pushing the
-release workflow back into use.
+with a `gittools/actions/gitversion/execute@v3` call, and feed the
+changelog entry for the cut version into `generate_release_notes:`
+(replacing the auto-generated one) before pushing the release workflow
+back into use.
+
+## Changelog — Keep a Changelog
+
+`CHANGELOG.md` at the repo root follows the
+[Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/) format.
+
+**Every PR updates the `[Unreleased]` section before it merges** — the
+CHANGELOG is part of the PR, not a later follow-up. Sections in use:
+
+| Section | Use for |
+|---|---|
+| `Added` | New features, CLI flags, user-visible behaviour. |
+| `Changed` | Existing behaviour changed — anything a user might notice. |
+| `Deprecated` | Features still present but slated for removal. |
+| `Removed` | Deleted features/flags/surfaces. |
+| `Fixed` | Bugs fixed. |
+| `Security` | Vulnerability fixes. |
+| `Internal` | Refactors, tooling, test changes, anything invisible to users. Optional — skip if the PR has nothing else. |
+
+Write entries as they'll read in release notes — imperative, concrete,
+no PR numbers. Link to relevant docs if the entry warrants it. If a
+PR truly has no user-visible change (pure chore / tooling), it still
+belongs under `Internal` so the log stays a faithful record of work.
+
+**Cutting a release:**
+
+1. Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` (use the
+   version GitVersion would compute — `dotnet-gitversion
+   /showvariable SemVer`).
+2. Open a fresh empty `## [Unreleased]` section above it.
+3. Tag and release as usual.
 
 ## Code style
 
