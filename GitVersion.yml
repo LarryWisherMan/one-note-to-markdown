@@ -1,0 +1,31 @@
+#
+# GitVersion configuration — trunk-based, conventional-commits-driven.
+#
+# - Workflow: GitHubFlow/v1 — short-lived branches, merge straight into master.
+# - Mode: ContinuousDelivery — stable semver increments tagged on master.
+# - Bump rules: derived from conventional commit prefixes.
+#     feat(…)     → minor bump
+#     fix(…)      → patch bump
+#     BREAKING CHANGE / !: in header → major bump
+#   Other types (chore:, docs:, test:, build:, refactor:, perf:, style:, ci:)
+#   do not bump on their own.
+#
+# Usage:
+#   > dotnet tool install --global GitVersion.Tool
+#   > dotnet-gitversion
+# or at build time via GitVersion.MsBuild (already referenced in the exe csproj).
+#
+
+workflow: GitHubFlow/v1
+mode: ContinuousDelivery
+
+major-version-bump-message: '^(\w+)(\(.+\))?!:|BREAKING CHANGE'
+minor-version-bump-message: '^feat(\(.+\))?:'
+patch-version-bump-message: '^fix(\(.+\))?:'
+no-bump-message: '^(chore|docs|test|build|refactor|perf|style|ci)(\(.+\))?:'
+
+branches:
+  main:
+    regex: ^master$|^main$
+    is-main-branch: true
+    mode: ContinuousDelivery
