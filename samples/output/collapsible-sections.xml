@@ -7,14 +7,14 @@
   </one:Title>
   <one:Outline>
     <one:OEChildren>
-      <one:OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
-        <one:T><![CDATA[Project Documentation]]></one:T>
+      <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+        <one:T style="font-family:Segoe UI;font-size:20.0pt"><![CDATA[<span style='font-weight:bold'>Project Documentation</span>]]></one:T>
         <one:OEChildren>
           <one:OE>
             <one:T><![CDATA[This is the top-level introduction. Everything below should nest under its heading.]]></one:T>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <one:T><![CDATA[Getting Started]]></one:T>
+          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Getting Started</span>]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:T><![CDATA[Follow these steps to set up the project.]]></one:T>
@@ -37,8 +37,8 @@
                 </one:List>
                 <one:T><![CDATA[Run <span style='font-family:Consolas;font-size:9pt'>dotnet build</span>]]></one:T>
               </one:OE>
-              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <one:T><![CDATA[Prerequisites]]></one:T>
+              <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+                <one:T style="font-family:Segoe UI;font-size:13.0pt"><![CDATA[<span style='font-weight:bold'>Prerequisites</span>]]></one:T>
                 <one:OEChildren>
                   <one:OE>
                     <one:List>
@@ -60,8 +60,8 @@
                   </one:OE>
                 </one:OEChildren>
               </one:OE>
-              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <one:T><![CDATA[Configuration]]></one:T>
+              <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+                <one:T style="font-family:Segoe UI;font-size:13.0pt"><![CDATA[<span style='font-weight:bold'>Configuration</span>]]></one:T>
                 <one:OEChildren>
                   <one:OE>
                     <one:T><![CDATA[No configuration needed for basic usage. The defaults are:]]></one:T>
@@ -142,11 +142,11 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <one:T><![CDATA[API Reference]]></one:T>
+          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>API Reference</span>]]></one:T>
             <one:OEChildren>
-              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <one:T><![CDATA[ImportService]]></one:T>
+              <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+                <one:T style="font-family:Segoe UI;font-size:13.0pt"><![CDATA[<span style='font-weight:bold'>ImportService</span>]]></one:T>
                 <one:OEChildren>
                   <one:OE>
                     <one:T><![CDATA[The <span style='font-family:Consolas;font-size:9pt'>ImportService</span> class orchestrates the import flow.]]></one:T>
@@ -169,8 +169,8 @@
                   </one:OE>
                 </one:OEChildren>
               </one:OE>
-              <one:OE style="font-family:Segoe UI;font-size:13.0pt;font-weight:bold">
-                <one:T><![CDATA[MarkdownToOneNoteXmlConverter]]></one:T>
+              <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+                <one:T style="font-family:Segoe UI;font-size:13.0pt"><![CDATA[<span style='font-weight:bold'>MarkdownToOneNoteXmlConverter</span>]]></one:T>
                 <one:OEChildren>
                   <one:OE>
                     <one:T><![CDATA[Converts Markdown to OneNote page XML.]]></one:T>
@@ -197,8 +197,8 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
-            <one:T><![CDATA[Troubleshooting]]></one:T>
+          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
+            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Troubleshooting</span>]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:T><![CDATA[<i>If OneNote is not responding, try restarting the desktop app.</i>]]></one:T>

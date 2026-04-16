@@ -109,21 +109,23 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var oes = oeChildren!.Elements(OneNs + "OE").ToList();
 
-        // Find the OE that has the heading text and correct font-size in its style attribute
+        // The heading's T element carries the heading font-size, and the CDATA
+        // wraps the text in <span style='font-weight:bold'> so bold doesn't
+        // cascade to nested children.
         var headingText = $"Heading {level}";
         var hasCorrectHeading = oes.Any(oe =>
         {
-            var style = oe.Attribute("style")?.Value ?? "";
             var t = oe.Element(OneNs + "T");
             if (t == null) return false;
+            var tStyle = t.Attribute("style")?.Value ?? "";
             var cdata = t.Nodes().OfType<XCData>().FirstOrDefault();
             if (cdata == null) return false;
             return cdata.Value.Contains(headingText) &&
-                   style.Contains($"font-size:{expectedSize}") &&
-                   style.Contains("font-weight:bold");
+                   tStyle.Contains($"font-size:{expectedSize}") &&
+                   cdata.Value.Contains("font-weight:bold");
         });
         hasCorrectHeading.Should().BeTrue(
-            $"expected an OE with style containing font-size:{expectedSize} and font-weight:bold, with T containing '{headingText}'");
+            $"expected an OE whose T has style font-size:{expectedSize} and CDATA wrapping '{headingText}' in a font-weight:bold span");
     }
 
     #endregion
@@ -388,6 +390,17 @@ public class MarkdownToOneNoteXmlConverterTests
 
     #region Collapsible Nesting Tests
 
+    // An H2 is identified by an OE whose T has font-size:16.0pt in its style.
+    private static IEnumerable<XElement> FindHeadingOes(XDocument doc, string fontSize)
+    {
+        return doc.Descendants(OneNs + "OE")
+            .Where(oe =>
+            {
+                var t = oe.Element(OneNs + "T");
+                return t?.Attribute("style")?.Value.Contains($"font-size:{fontSize}") == true;
+            });
+    }
+
     [Fact]
     public void Convert_CollapsibleEnabled_NestsContentUnderHeadings()
     {
@@ -395,8 +408,7 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
         var doc = ParseResult(result);
 
-        var h2Oes = doc.Descendants(OneNs + "OE")
-            .Where(oe => oe.Attribute("style")?.Value.Contains("16.0pt") == true);
+        var h2Oes = FindHeadingOes(doc, "16.0pt");
         h2Oes.Should().NotBeEmpty();
 
         var h2Oe = h2Oes.First();
@@ -411,8 +423,7 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: false);
         var doc = ParseResult(result);
 
-        var h2Oes = doc.Descendants(OneNs + "OE")
-            .Where(oe => oe.Attribute("style")?.Value.Contains("16.0pt") == true);
+        var h2Oes = FindHeadingOes(doc, "16.0pt");
         h2Oes.Should().NotBeEmpty();
 
         var h2Oe = h2Oes.First();

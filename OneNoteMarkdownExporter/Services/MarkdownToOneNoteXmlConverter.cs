@@ -282,12 +282,31 @@ public class MarkdownToOneNoteXmlConverter
     private XElement CreateHeadingOe(HeadingBlock heading)
     {
         var text = RenderInlineHtml(heading.Inline);
-        var style = GetHeadingStyle(heading.Level);
+
+        if (!HeadingStyles.TryGetValue(heading.Level, out var hs))
+        {
+            hs = ("11.0pt", true, false);
+        }
+
+        // Wrap text in inline span so bold/italic don't cascade to nested children.
+        var spanStyles = new List<string>();
+        if (hs.Bold) spanStyles.Add("font-weight:bold");
+        if (hs.Italic) spanStyles.Add("font-style:italic");
+        var wrappedText = spanStyles.Count > 0
+            ? $"<span style='{string.Join(";", spanStyles)}'>{text}</span>"
+            : text;
+
+        // OE style is what children inherit — keep it at the body font/size.
+        var oeStyle = "font-family:Segoe UI;font-size:11.0pt";
+
+        // T style applies to this line only (the heading line itself).
+        var tStyle = $"font-family:Segoe UI;font-size:{hs.Size}";
 
         return new XElement(OneNs + "OE",
-            new XAttribute("style", style),
+            new XAttribute("style", oeStyle),
             new XElement(OneNs + "T",
-                new XCData(text)));
+                new XAttribute("style", tStyle),
+                new XCData(wrappedText)));
     }
 
     /// <summary>
@@ -520,23 +539,6 @@ public class MarkdownToOneNoteXmlConverter
     /// <summary>
     /// Builds the CSS style string for a heading level.
     /// </summary>
-    private static string GetHeadingStyle(int level)
-    {
-        if (!HeadingStyles.TryGetValue(level, out var style))
-        {
-            style = ("11.0pt", true, false); // default fallback
-        }
-
-        var sb = new StringBuilder();
-        sb.Append($"font-family:Segoe UI;font-size:{style.Size};font-weight:bold");
-        if (style.Italic)
-        {
-            sb.Append(";font-style:italic");
-        }
-
-        return sb.ToString();
-    }
-
     /// <summary>
     /// Renders inline content as HTML suitable for OneNote CDATA sections.
     /// Instance method so image rendering can access <see cref="_basePath"/> and
