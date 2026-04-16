@@ -768,9 +768,9 @@ var x = 42;
     [Fact]
     public void Convert_ReferenceMarkdown_MatchesReferenceShape()
     {
-        // Golden-file test against Z_SampleRef: structural shape, not byte equality.
-        // See Z_SampleRef/Reference-page.xml for the target OneNote rendering.
-        var refDir = Path.Combine(FindRepoRoot(), "Z_SampleRef");
+        // Golden-file test: structural shape, not byte equality.
+        // See docs/reference-page/Reference-page.xml for the target OneNote rendering.
+        var refDir = Path.Combine(FindRepoRoot(), "docs", "reference-page");
         var mdPath = Path.Combine(refDir, "MarkDow_VisualRef1.md");
         if (!File.Exists(mdPath))
             throw new FileNotFoundException($"Reference markdown not found: {mdPath}");
@@ -876,9 +876,9 @@ var x = 42;
             File.WriteAllText(outputPath, xml);
         }
 
-        // Also emit a converted version of the Z_SampleRef visual reference so the
-        // dev can diff it against Z_SampleRef/Reference-page.xml by eye.
-        var refDir = Path.Combine(repoRoot, "Z_SampleRef");
+        // Also emit a converted version of the visual reference so the dev can
+        // diff it against docs/reference-page/Reference-page.xml by eye.
+        var refDir = Path.Combine(repoRoot, "docs", "reference-page");
         var refMd = Path.Combine(refDir, "MarkDow_VisualRef1.md");
         if (File.Exists(refMd))
         {

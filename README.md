@@ -136,6 +136,21 @@ OneNoteMarkdownExporter.exe --all --quiet --overwrite
 OneNoteMarkdownExporter.exe --all --output "D:\Backups\OneNote" --verbose --overwrite
 ```
 
+## Markdown → OneNote (Import)
+
+In addition to exporting OneNote to Markdown, the tool can go the other
+direction: take a Markdown file and create a OneNote page with
+OneNote-native formatting. Useful for editing notes in your markdown
+editor of choice and pushing them back into a notebook.
+
+```powershell
+# Import a Markdown file into a notebook/section
+OneNoteMarkdownExporter.exe --import "MyNotebook/MySection" --file "notes.md"
+```
+
+See [docs/importer.md](docs/importer.md) for the full mapping table,
+CLI flags, and known limitations.
+
 ## Markdown Linting
 
 The app uses [markdownlint-cli](https://github.com/DavidAnson/markdownlint-cli) for Markdown linting. Node.js and all dependencies are bundled, so it works out of the box with no additional setup.
