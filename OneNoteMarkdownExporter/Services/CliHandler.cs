@@ -345,10 +345,10 @@ namespace OneNoteMarkdownExporter.Services
                     new OneNoteTargetResolver(),
                     new OneNoteTreePublisher(oneNoteService, converter));
 
-                var progress = new Progress<string>(msg =>
-                {
-                    if (!quiet) Console.WriteLine(msg);
-                });
+                // Use a direct IProgress implementation instead of Progress<T>,
+                // which marshals via SynchronizationContext and gets swallowed
+                // when the WPF app runs in CLI mode.
+                IProgress<string>? progress = quiet ? null : new DirectProgress(Console.WriteLine);
 
                 var report = await service.PublishAsync(options, progress);
 
@@ -567,5 +567,17 @@ namespace OneNoteMarkdownExporter.Services
                 PrintItem(child, indent + "  ", verbose);
             }
         }
+    }
+
+    /// <summary>
+    /// IProgress that calls the handler directly on the current thread,
+    /// avoiding the SynchronizationContext marshaling of <see cref="Progress{T}"/>
+    /// which gets swallowed in WPF CLI mode.
+    /// </summary>
+    internal sealed class DirectProgress : IProgress<string>
+    {
+        private readonly Action<string> _handler;
+        public DirectProgress(Action<string> handler) => _handler = handler;
+        public void Report(string value) => _handler(value);
     }
 }

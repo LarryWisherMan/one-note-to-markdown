@@ -16,7 +16,7 @@ public class OneNoteTargetResolver
         // 1) Opt-out short-circuit.
         if (fm.OptOut)
         {
-            return ResolveOutcome.Skipped(fileRelativePath, "skipped (onenote: false).");
+            return ResolveOutcome.Skipped(fileRelativePath, $"{fileRelativePath}: skipped (onenote: false).");
         }
 
         // 2) Split file_rel into folder segments + filename dot-segments.
@@ -106,6 +106,12 @@ public class OneNoteTargetResolver
                     $"{fileRelativePath}: cannot infer OneNote path — add onenote.section or deepen the folder structure.");
             }
             section = remaining[^1];
+            remaining.RemoveAt(remaining.Count - 1);
+        }
+        else if (remaining.Count > 0 && string.Equals(remaining[^1], section))
+        {
+            // FM section matches the last remaining folder segment — consume it
+            // so it doesn't also appear as a section group (mirrors notebook-slot logic).
             remaining.RemoveAt(remaining.Count - 1);
         }
 
