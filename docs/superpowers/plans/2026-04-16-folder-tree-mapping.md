@@ -831,10 +831,9 @@ public class OneNoteTargetResolverTests
     [Fact]
     public void Resolve_FmNotebookDiffersFromFolder_WarnsButUsesFm()
     {
-        // When FM sets notebook but folder has a mismatching first segment:
-        // FM wins for the notebook name; the folder first segment is NOT
-        // consumed (resolution is per-field independent), so it falls through
-        // to become a section group per the normal middle-segment inference.
+        // Under Option C: the first FOLDER segment is the "notebook slot."
+        // FM overrides the notebook name; the folder slot is consumed (not
+        // left as a section group). Warning emitted for the mismatch.
         var fm = new FrontMatter
         {
             OneNote = new OneNoteFrontMatter { Notebook = "Personal" },
@@ -846,7 +845,7 @@ public class OneNoteTargetResolverTests
             firstH1: null);
 
         outcome.Target!.Notebook.Should().Be("Personal");
-        outcome.Target.SectionGroups.Should().BeEquivalentTo(new[] { "Work Notes" });
+        outcome.Target.SectionGroups.Should().BeEmpty(); // folder slot consumed
         outcome.Target.Section.Should().Be("arch");
         outcome.Target.PageSlug.Should().Be("overview");
         outcome.Diagnostic.Should().NotBeNull();
@@ -924,8 +923,8 @@ public class OneNoteTargetResolver
             return ResolveOutcome.Skipped(fileRelativePath, "skipped (onenote: false).");
         }
 
-        // 2) Split file_rel on `/` and dots in filename stem.
-        var segments = Segment(fileRelativePath);
+        // 2) Split file_rel into folder segments + filename dot-segments.
+        var (segments, folderSegmentCount) = Segment(fileRelativePath);
         if (segments.Any(string.IsNullOrEmpty))
         {
             return ResolveOutcome.ErroredResult(
@@ -952,6 +951,7 @@ public class OneNoteTargetResolver
 
         var pageSlug = segments[^1].Trim();
         var remaining = segments.Take(segments.Count - 1).Select(s => s.Trim()).ToList();
+        bool hasNotebookSlot = folderSegmentCount > 0;
 
         string? titleWarning = null;
         var pageTitle = fm.Title ?? firstH1;
@@ -962,35 +962,43 @@ public class OneNoteTargetResolver
         }
 
         // 5) Resolve notebook.
+        // First FOLDER segment is the "notebook slot." Dots in bare filenames are
+        // never the notebook slot — they're always SG/section hierarchy.
         string? notebook = fm.OneNote?.Notebook;
         string? notebookWarning = null;
-        bool notebookConsumedFromSegments = false;
 
-        if (notebook is null)
+        if (notebook is not null)
         {
-            if (cliNotebook is not null)
+            // FM sets notebook. If a folder notebook-slot exists, consume it.
+            if (hasNotebookSlot && remaining.Count > 0)
             {
-                notebook = cliNotebook;
+                var folderFirst = remaining[0];
+                if (!string.Equals(folderFirst, notebook))
+                {
+                    notebookWarning = $"{fileRelativePath}: FM notebook \"{notebook}\" overrides folder-inferred \"{folderFirst}\".";
+                }
+                remaining.RemoveAt(0); // Always consume the folder notebook slot.
             }
-            else if (hasOneNoteKey && remaining.Count > 0)
-            {
-                notebook = remaining[0];
-                remaining.RemoveAt(0);
-                notebookConsumedFromSegments = true;
-            }
-            else
-            {
-                // Can't resolve notebook. Might still be recoverable if FM sets section only — still errors.
-                return ResolveOutcome.ErroredResult(
-                    fileRelativePath,
-                    fm.OneNote?.Section is not null
-                        ? $"{fileRelativePath}: section specified but no notebook — add onenote.notebook or pass --notebook."
-                        : $"{fileRelativePath}: cannot infer OneNote path — add onenote.notebook and onenote.section to front-matter, or move the file into a folder.");
-            }
+            // Bare filename + FM notebook: dot-segments stay (become SG/section).
         }
-        else if (remaining.Count > 0 && !string.Equals(remaining[0], notebook))
+        else if (cliNotebook is not null)
         {
-            notebookWarning = $"{fileRelativePath}: FM notebook \"{notebook}\" overrides folder-inferred \"{remaining[0]}\".";
+            notebook = cliNotebook;
+            // CLI mode: no consumption — source root is the notebook root.
+        }
+        else if (hasOneNoteKey && remaining.Count > 0)
+        {
+            // Inferred: consume first segment (folder or dot) as notebook.
+            notebook = remaining[0];
+            remaining.RemoveAt(0);
+        }
+        else
+        {
+            return ResolveOutcome.ErroredResult(
+                fileRelativePath,
+                fm.OneNote?.Section is not null
+                    ? $"{fileRelativePath}: section specified but no notebook — add onenote.notebook or pass --notebook."
+                    : $"{fileRelativePath}: cannot infer OneNote path — add onenote.notebook and onenote.section to front-matter, or move the file into a folder.");
         }
 
         // 6) Resolve section.
@@ -1043,23 +1051,26 @@ public class OneNoteTargetResolver
         return new ResolveOutcome(target, diag);
     }
 
-    private static List<string> Segment(string fileRelativePath)
+    private static (List<string> segments, int folderSegmentCount) Segment(string fileRelativePath)
     {
         var pathParts = fileRelativePath
             .Replace('\\', '/')
             .Split('/', System.StringSplitOptions.None)
             .ToList();
 
-        // Split the filename stem on dots. Strip .md first.
-        var last = pathParts[^1];
-        if (last.EndsWith(".md", System.StringComparison.OrdinalIgnoreCase))
-        {
-            last = last[..^3];
-        }
-        var stemParts = last.Split('.', System.StringSplitOptions.None);
+        // Last part is the filename; everything before it is a folder segment.
+        var filename = pathParts[^1];
         pathParts.RemoveAt(pathParts.Count - 1);
+        int folderSegmentCount = pathParts.Count;
+
+        // Split the filename stem on dots. Strip .md first.
+        if (filename.EndsWith(".md", System.StringComparison.OrdinalIgnoreCase))
+        {
+            filename = filename[..^3];
+        }
+        var stemParts = filename.Split('.', System.StringSplitOptions.None);
         pathParts.AddRange(stemParts);
-        return pathParts;
+        return (pathParts, folderSegmentCount);
     }
 
     private static string? Numeric(

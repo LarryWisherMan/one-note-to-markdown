@@ -142,14 +142,17 @@ Each publishable file resolves into `(notebook, [section_groups…], section, pa
 
 ### Segmentation
 
-Split `file_rel` on both `/` and `.` in the filename stem (the `.md` extension is dropped first):
+Split `file_rel` on `/` to get folder segments and the filename. Then split the filename stem on `.` to get dot-segments. Track which segments came from folders.
 
-| `file_rel` | Segments |
-|---|---|
-| `work-notes/architecture/overview.md` | `["work-notes", "architecture", "overview"]` |
-| `work-notes/backend.api.auth.md` | `["work-notes", "backend", "api", "auth"]` |
-| `backend/api.auth.md` | `["backend", "api", "auth"]` |
-| `overview.md` | `["overview"]` |
+| `file_rel` | Folder segments | Filename dot-segments | Combined |
+|---|---|---|---|
+| `work-notes/architecture/overview.md` | `["work-notes", "architecture"]` | `["overview"]` | `["work-notes", "architecture", "overview"]` |
+| `work-notes/backend.api.auth.md` | `["work-notes"]` | `["backend", "api", "auth"]` | `["work-notes", "backend", "api", "auth"]` |
+| `backend/api.auth.md` | `["backend"]` | `["api", "auth"]` | `["backend", "api", "auth"]` |
+| `overview.md` | `[]` | `["overview"]` | `["overview"]` |
+| `backend.api.auth.md` | `[]` | `["backend", "api", "auth"]` | `["backend", "api", "auth"]` |
+
+The distinction matters for the notebook slot rule below.
 
 ### Resolution (fields are independent)
 
@@ -159,10 +162,14 @@ If `fm.onenote` is the literal `false`, the file is skipped before any further r
 
 **Notebook**
 
-1. `fm.onenote.notebook` if set →
-2. else `cli_notebook` if set →
-3. else, **only if `onenote:` key is present and not `false`**, the first segment (consumed from segments).
+The first **folder** segment (if any) is the "notebook slot." Filename dot-segments are never the notebook slot — they are always SG/section hierarchy.
+
+1. `fm.onenote.notebook` if set → use it. If a folder notebook-slot exists, **consume it** (emit a warning if the folder name differs from the FM value).
+2. else `cli_notebook` if set → use it. **Do not consume** any segment (source root is the notebook root).
+3. else, **only if `onenote:` key is present and not `false`**, consume the first segment (folder or dot) as the notebook.
 4. else → file is not a OneNote target; publisher skips it.
+
+Note on step 3: for bare filenames (no folders), the first dot-segment is consumed for inference only — this preserves Dendron-style flat layouts where `work.arch.overview.md` + `onenote: true` infers notebook `work`.
 
 **Page**
 
@@ -195,7 +202,7 @@ title:           fm.title             >  first # H1  >  slug
 |---|---|---|---|
 | `Work Notes/Architecture/overview.md` | `onenote: true` | — | NB `Work Notes` → Section `Architecture` → Page `overview` |
 | `Work Notes/Backend/API/Architecture/overview.md` | `onenote: true` | — | NB `Work Notes` → SG `Backend`→`API` → Section `Architecture` → Page `overview` |
-| `random/foo.md` | `onenote: { notebook: "X", section: "Y" }` | — | NB `X` → Section `Y` → Page `foo` (folder path ignored) |
+| `random/foo.md` | `onenote: { notebook: "X", section: "Y" }` | — | NB `X` → Section `Y` → Page `foo`. Folder slot `random` consumed (warning: mismatch). |
 | `architecture/overview.md` | (no `onenote:`) | `--notebook "Work Notes"` | NB `Work Notes` → Section `architecture` → Page `overview` |
 | `backend.api.auth.md` | `onenote: { notebook: "Work Notes" }` | — | NB `Work Notes` → SG `backend` → Section `api` → Page `auth` |
 | `overview.md` | `onenote: true` | — | **Error**: single segment — can't infer section. |
