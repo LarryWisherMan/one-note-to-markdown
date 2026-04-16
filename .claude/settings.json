@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "Write",
+      "Agent",
+      "Read",
+      "Glob",
+      "Grep"
+    ]
+  },
+  "enabledPlugins": {
+    "dotnet-skills@dotnet-skills": true
+  }
+}

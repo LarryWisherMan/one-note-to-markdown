@@ -66,12 +66,22 @@ public class MarkdownToOneNoteXmlConverter
         // Build the page XML with explicit one: prefix (required by OneNote COM API)
         var page = new XElement(OneNs + "Page",
             new XAttribute(XNamespace.Xmlns + "one", OneNs.NamespaceName),
-            new XAttribute("name", resolvedTitle),
-            new XElement(OneNs + "Title",
+            new XAttribute("name", resolvedTitle));
+
+        // QuickStyleDefs map heading levels to OneNote's native style rendering.
+        // Must come before Title per OneNote's schema ordering.
+        foreach (var qsd in BuildQuickStyleDefs())
+        {
+            page.Add(qsd);
+        }
+
+        page.Add(new XElement(OneNs + "Title",
+                new XAttribute("quickStyleIndex", QuickStylePageTitle),
                 new XElement(OneNs + "OE",
                     new XElement(OneNs + "T",
-                        new XCData(resolvedTitle)))),
-            new XElement(OneNs + "Outline",
+                        new XCData(resolvedTitle)))));
+
+        page.Add(new XElement(OneNs + "Outline",
                 new XElement(OneNs + "OEChildren", contentElements)));
 
         var doc = new XDocument(
@@ -80,6 +90,74 @@ public class MarkdownToOneNoteXmlConverter
 
         return doc.Declaration + "\n" + doc.Root!.ToString();
     }
+
+    // QuickStyleIndex constants (must match indices used in BuildQuickStyleDefs).
+    private const string QuickStylePageTitle = "0";
+    private const string QuickStyleH1 = "1";
+    private const string QuickStyleH2 = "2";
+    private const string QuickStyleH3 = "3";
+    private const string QuickStyleH4 = "4";
+    private const string QuickStyleH5 = "5";
+    private const string QuickStyleH6 = "6";
+    private const string QuickStyleCite = "7";
+    private const string QuickStyleQuote = "8";
+    private const string QuickStyleCode = "9";
+    private const string QuickStyleP = "10";
+
+    /// <summary>
+    /// Builds QuickStyleDef elements matching OneNote's built-in paragraph styles,
+    /// so headings render as native "Heading 1", "Heading 2", etc.
+    /// </summary>
+    private static IEnumerable<XElement> BuildQuickStyleDefs()
+    {
+        return new[]
+        {
+            QuickStyle("0", "PageTitle", "Calibri Light", "20.0", color: "automatic"),
+            QuickStyle("1", "h1", "Calibri Light", "16.0", color: "#1E4E79", spaceBefore: "12.0", spaceAfter: "3.0"),
+            QuickStyle("2", "h2", "Calibri Light", "14.0", color: "#2E75B6", spaceBefore: "10.0", spaceAfter: "2.0"),
+            QuickStyle("3", "h3", "Calibri Light", "12.0", color: "#5B9BD5", spaceBefore: "8.0", spaceAfter: "2.0"),
+            QuickStyle("4", "h4", "Calibri", "12.0", color: "#2E75B6", italic: true, spaceBefore: "6.0", spaceAfter: "2.0"),
+            QuickStyle("5", "h5", "Calibri", "11.0", color: "automatic", bold: true, spaceBefore: "6.0", spaceAfter: "2.0"),
+            QuickStyle("6", "h6", "Calibri", "11.0", color: "#666666", italic: true, bold: true, spaceBefore: "6.0", spaceAfter: "2.0"),
+            QuickStyle("7", "cite", "Calibri", "9.0", color: "#808080", italic: true),
+            QuickStyle("8", "quote", "Calibri", "11.0", color: "automatic", italic: true),
+            QuickStyle("9", "code", "Consolas", "9.0", color: "automatic"),
+            QuickStyle("10", "p", "Calibri", "11.0", color: "automatic")
+        };
+    }
+
+    private static XElement QuickStyle(
+        string index, string name, string font, string fontSize,
+        string color = "automatic",
+        bool bold = false, bool italic = false,
+        string spaceBefore = "0.0", string spaceAfter = "0.0")
+    {
+        var attrs = new List<XAttribute>
+        {
+            new XAttribute("index", index),
+            new XAttribute("name", name),
+            new XAttribute("fontColor", color),
+            new XAttribute("highlightColor", "automatic"),
+            new XAttribute("font", font),
+            new XAttribute("fontSize", fontSize),
+            new XAttribute("spaceBefore", spaceBefore),
+            new XAttribute("spaceAfter", spaceAfter)
+        };
+        if (bold) attrs.Add(new XAttribute("bold", "true"));
+        if (italic) attrs.Add(new XAttribute("italic", "true"));
+        return new XElement(OneNs + "QuickStyleDef", attrs);
+    }
+
+    private static string QuickStyleIndexFor(int headingLevel) => headingLevel switch
+    {
+        1 => QuickStyleH1,
+        2 => QuickStyleH2,
+        3 => QuickStyleH3,
+        4 => QuickStyleH4,
+        5 => QuickStyleH5,
+        6 => QuickStyleH6,
+        _ => QuickStyleP
+    };
 
     /// <summary>
     /// Extracts the plain text from the first H1 heading in the document.
@@ -282,31 +360,16 @@ public class MarkdownToOneNoteXmlConverter
     private XElement CreateHeadingOe(HeadingBlock heading)
     {
         var text = RenderInlineHtml(heading.Inline);
+        var quickStyleIdx = QuickStyleIndexFor(heading.Level);
 
-        if (!HeadingStyles.TryGetValue(heading.Level, out var hs))
-        {
-            hs = ("11.0pt", true, false);
-        }
-
-        // Wrap text in inline span so bold/italic don't cascade to nested children.
-        var spanStyles = new List<string>();
-        if (hs.Bold) spanStyles.Add("font-weight:bold");
-        if (hs.Italic) spanStyles.Add("font-style:italic");
-        var wrappedText = spanStyles.Count > 0
-            ? $"<span style='{string.Join(";", spanStyles)}'>{text}</span>"
-            : text;
-
-        // OE style is what children inherit — keep it at the body font/size.
-        var oeStyle = "font-family:Segoe UI;font-size:11.0pt";
-
-        // T style applies to this line only (the heading line itself).
-        var tStyle = $"font-family:Segoe UI;font-size:{hs.Size}";
-
+        // quickStyleIndex references a page-level QuickStyleDef. OneNote renders this
+        // as a native "Heading N" paragraph style with proper font, color, and spacing.
+        // Children under this OE's OEChildren will use the default "p" style, not the
+        // heading style, because they'll get their own quickStyleIndex.
         return new XElement(OneNs + "OE",
-            new XAttribute("style", oeStyle),
+            new XAttribute("quickStyleIndex", quickStyleIdx),
             new XElement(OneNs + "T",
-                new XAttribute("style", tStyle),
-                new XCData(wrappedText)));
+                new XCData(text)));
     }
 
     /// <summary>
@@ -340,6 +403,7 @@ public class MarkdownToOneNoteXmlConverter
         }
 
         var oe = new XElement(OneNs + "OE",
+            new XAttribute("quickStyleIndex", QuickStyleP),
             new XElement(OneNs + "T", new XCData(html))
         );
 
@@ -490,8 +554,9 @@ public class MarkdownToOneNoteXmlConverter
             if (block is ParagraphBlock paragraph)
             {
                 children.Add(new XElement(OneNs + "OE",
+                    new XAttribute("quickStyleIndex", QuickStyleQuote),
                     new XElement(OneNs + "T",
-                        new XCData($"<i>{RenderInlineHtml(paragraph.Inline)}</i>"))
+                        new XCData(RenderInlineHtml(paragraph.Inline)))
                 ));
             }
             else
@@ -509,6 +574,7 @@ public class MarkdownToOneNoteXmlConverter
     private XElement CreateHorizontalRuleElement()
     {
         return new XElement(OneNs + "OE",
+            new XAttribute("quickStyleIndex", QuickStyleP),
             new XElement(OneNs + "T", new XCData("---"))
         );
     }
@@ -532,6 +598,7 @@ public class MarkdownToOneNoteXmlConverter
         }
 
         return new XElement(OneNs + "OE",
+            new XAttribute("quickStyleIndex", QuickStyleP),
             new XElement(OneNs + "T",
                 new XCData(System.Net.WebUtility.HtmlEncode(text))));
     }

@@ -91,10 +91,13 @@ public class MarkdownToOneNoteXmlConverterTests
     #region Heading Tests
 
     [Theory]
-    [InlineData("# Heading 1", 1, "20.0pt")]
-    [InlineData("## Heading 2", 2, "16.0pt")]
-    [InlineData("### Heading 3", 3, "13.0pt")]
-    public void Convert_Heading_AppliesCorrectFontSize(string markdown, int level, string expectedSize)
+    [InlineData("# Heading 1", 1, "1")]
+    [InlineData("## Heading 2", 2, "2")]
+    [InlineData("### Heading 3", 3, "3")]
+    [InlineData("#### Heading 4", 4, "4")]
+    [InlineData("##### Heading 5", 5, "5")]
+    [InlineData("###### Heading 6", 6, "6")]
+    public void Convert_Heading_AppliesQuickStyleIndex(string markdown, int level, string expectedIndex)
     {
         // Arrange & Act
         var result = _converter.Convert(markdown, pageTitle: "Test");
@@ -109,23 +112,36 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var oes = oeChildren!.Elements(OneNs + "OE").ToList();
 
-        // The heading's T element carries the heading font-size, and the CDATA
-        // wraps the text in <span style='font-weight:bold'> so bold doesn't
-        // cascade to nested children.
+        // Each heading OE references its corresponding QuickStyleDef (h1 -> index 1, etc.)
+        // so OneNote renders it natively as "Heading N" with proper font, color and spacing.
         var headingText = $"Heading {level}";
         var hasCorrectHeading = oes.Any(oe =>
         {
             var t = oe.Element(OneNs + "T");
             if (t == null) return false;
-            var tStyle = t.Attribute("style")?.Value ?? "";
             var cdata = t.Nodes().OfType<XCData>().FirstOrDefault();
             if (cdata == null) return false;
             return cdata.Value.Contains(headingText) &&
-                   tStyle.Contains($"font-size:{expectedSize}") &&
-                   cdata.Value.Contains("font-weight:bold");
+                   oe.Attribute("quickStyleIndex")?.Value == expectedIndex;
         });
         hasCorrectHeading.Should().BeTrue(
-            $"expected an OE whose T has style font-size:{expectedSize} and CDATA wrapping '{headingText}' in a font-weight:bold span");
+            $"expected an OE with quickStyleIndex=\"{expectedIndex}\" and CDATA containing '{headingText}'");
+    }
+
+    [Fact]
+    public void Convert_Page_DefinesQuickStyleDefs()
+    {
+        var result = _converter.Convert("# Anything", pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var defs = doc.Root!.Elements(OneNs + "QuickStyleDef").ToList();
+        defs.Should().NotBeEmpty();
+
+        var names = defs.Select(d => d.Attribute("name")?.Value).ToList();
+        names.Should().Contain("PageTitle");
+        names.Should().Contain("h1");
+        names.Should().Contain("p");
+        names.Should().Contain("code");
     }
 
     #endregion
@@ -365,14 +381,23 @@ public class MarkdownToOneNoteXmlConverterTests
     #region Blockquote and HR Tests
 
     [Fact]
-    public void Convert_Blockquote_RendersAsIndentedItalic()
+    public void Convert_Blockquote_UsesQuoteQuickStyle()
     {
         var markdown = "> This is a quote";
         var result = _converter.Convert(markdown, pageTitle: "Test");
         var doc = ParseResult(result);
 
-        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => t.Contains("<i>") && t.Contains("This is a quote"));
+        // Blockquote OE uses quickStyleIndex="8" (the "quote" style, italic).
+        var quoteOes = doc.Descendants(OneNs + "OE")
+            .Where(oe => oe.Attribute("quickStyleIndex")?.Value == "8")
+            .ToList();
+        quoteOes.Should().NotBeEmpty();
+
+        var cdataValues = quoteOes
+            .Elements(OneNs + "T")
+            .SelectMany(t => t.Nodes().OfType<XCData>())
+            .Select(c => c.Value);
+        cdataValues.Should().Contain(v => v.Contains("This is a quote"));
     }
 
     [Fact]
@@ -390,15 +415,11 @@ public class MarkdownToOneNoteXmlConverterTests
 
     #region Collapsible Nesting Tests
 
-    // An H2 is identified by an OE whose T has font-size:16.0pt in its style.
-    private static IEnumerable<XElement> FindHeadingOes(XDocument doc, string fontSize)
+    // A heading OE is identified by its quickStyleIndex value.
+    private static IEnumerable<XElement> FindHeadingOesByQuickStyle(XDocument doc, string quickStyleIndex)
     {
         return doc.Descendants(OneNs + "OE")
-            .Where(oe =>
-            {
-                var t = oe.Element(OneNs + "T");
-                return t?.Attribute("style")?.Value.Contains($"font-size:{fontSize}") == true;
-            });
+            .Where(oe => oe.Attribute("quickStyleIndex")?.Value == quickStyleIndex);
     }
 
     [Fact]
@@ -408,7 +429,8 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
         var doc = ParseResult(result);
 
-        var h2Oes = FindHeadingOes(doc, "16.0pt");
+        // H2 -> quickStyleIndex "2"
+        var h2Oes = FindHeadingOesByQuickStyle(doc, "2");
         h2Oes.Should().NotBeEmpty();
 
         var h2Oe = h2Oes.First();
@@ -423,7 +445,7 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: false);
         var doc = ParseResult(result);
 
-        var h2Oes = FindHeadingOes(doc, "16.0pt");
+        var h2Oes = FindHeadingOesByQuickStyle(doc, "2");
         h2Oes.Should().NotBeEmpty();
 
         var h2Oe = h2Oes.First();

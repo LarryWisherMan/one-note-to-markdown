@@ -1,17 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <one:Page xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" name="Lists and Tables">
-  <one:Title>
+  <one:QuickStyleDef index="0" name="PageTitle" fontColor="automatic" highlightColor="automatic" font="Calibri Light" fontSize="20.0" spaceBefore="0.0" spaceAfter="0.0" />
+  <one:QuickStyleDef index="1" name="h1" fontColor="#1E4E79" highlightColor="automatic" font="Calibri Light" fontSize="16.0" spaceBefore="12.0" spaceAfter="3.0" />
+  <one:QuickStyleDef index="2" name="h2" fontColor="#2E75B6" highlightColor="automatic" font="Calibri Light" fontSize="14.0" spaceBefore="10.0" spaceAfter="2.0" />
+  <one:QuickStyleDef index="3" name="h3" fontColor="#5B9BD5" highlightColor="automatic" font="Calibri Light" fontSize="12.0" spaceBefore="8.0" spaceAfter="2.0" />
+  <one:QuickStyleDef index="4" name="h4" fontColor="#2E75B6" highlightColor="automatic" font="Calibri" fontSize="12.0" spaceBefore="6.0" spaceAfter="2.0" italic="true" />
+  <one:QuickStyleDef index="5" name="h5" fontColor="automatic" highlightColor="automatic" font="Calibri" fontSize="11.0" spaceBefore="6.0" spaceAfter="2.0" bold="true" />
+  <one:QuickStyleDef index="6" name="h6" fontColor="#666666" highlightColor="automatic" font="Calibri" fontSize="11.0" spaceBefore="6.0" spaceAfter="2.0" bold="true" italic="true" />
+  <one:QuickStyleDef index="7" name="cite" fontColor="#808080" highlightColor="automatic" font="Calibri" fontSize="9.0" spaceBefore="0.0" spaceAfter="0.0" italic="true" />
+  <one:QuickStyleDef index="8" name="quote" fontColor="automatic" highlightColor="automatic" font="Calibri" fontSize="11.0" spaceBefore="0.0" spaceAfter="0.0" italic="true" />
+  <one:QuickStyleDef index="9" name="code" fontColor="automatic" highlightColor="automatic" font="Consolas" fontSize="9.0" spaceBefore="0.0" spaceAfter="0.0" />
+  <one:QuickStyleDef index="10" name="p" fontColor="automatic" highlightColor="automatic" font="Calibri" fontSize="11.0" spaceBefore="0.0" spaceAfter="0.0" />
+  <one:Title quickStyleIndex="0">
     <one:OE>
       <one:T><![CDATA[Lists and Tables]]></one:T>
     </one:OE>
   </one:Title>
   <one:Outline>
     <one:OEChildren>
-      <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-        <one:T style="font-family:Segoe UI;font-size:20.0pt"><![CDATA[<span style='font-weight:bold'>Lists and Tables</span>]]></one:T>
+      <one:OE quickStyleIndex="1">
+        <one:T><![CDATA[Lists and Tables]]></one:T>
         <one:OEChildren>
-          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Bullet Lists</span>]]></one:T>
+          <one:OE quickStyleIndex="2">
+            <one:T><![CDATA[Bullet Lists]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:List>
@@ -33,8 +44,8 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Nested Bullets</span>]]></one:T>
+          <one:OE quickStyleIndex="2">
+            <one:T><![CDATA[Nested Bullets]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:List>
@@ -78,8 +89,8 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Numbered Lists</span>]]></one:T>
+          <one:OE quickStyleIndex="2">
+            <one:T><![CDATA[Numbered Lists]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:List>
@@ -101,8 +112,8 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Nested Numbers</span>]]></one:T>
+          <one:OE quickStyleIndex="2">
+            <one:T><![CDATA[Nested Numbers]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:List>
@@ -132,8 +143,8 @@
               </one:OE>
             </one:OEChildren>
           </one:OE>
-          <one:OE style="font-family:Segoe UI;font-size:11.0pt">
-            <one:T style="font-family:Segoe UI;font-size:16.0pt"><![CDATA[<span style='font-weight:bold'>Tables</span>]]></one:T>
+          <one:OE quickStyleIndex="2">
+            <one:T><![CDATA[Tables]]></one:T>
             <one:OEChildren>
               <one:OE>
                 <one:Table bordersVisible="true">
