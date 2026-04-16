@@ -6,7 +6,7 @@ This page tests local image embedding.
 
 Here is our logo:
 
-![Project Logo](assets/logo.png)
+![Project Logo](assets/image.png)
 
 And here is text after the image.
 
