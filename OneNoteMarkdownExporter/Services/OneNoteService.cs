@@ -194,5 +194,63 @@ namespace OneNoteMarkdownExporter.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Creates a new page in the specified section.
+        /// </summary>
+        /// <param name="sectionId">The OneNote ID of the target section.</param>
+        /// <returns>The ID of the newly created page.</returns>
+        public string CreatePage(string sectionId)
+        {
+            string newPageId;
+            _oneNoteApp.CreateNewPage(sectionId, out newPageId, NewPageStyle.npsBlankPageWithTitle);
+            return newPageId;
+        }
+
+        /// <summary>
+        /// Finds a section ID by notebook name and section name.
+        /// Case-insensitive match.
+        /// </summary>
+        /// <param name="notebookName">The notebook name to search for.</param>
+        /// <param name="sectionName">The section name within the notebook.</param>
+        /// <returns>The section ID, or null if not found.</returns>
+        public string? FindSectionId(string notebookName, string sectionName)
+        {
+            string xml;
+            _oneNoteApp.GetHierarchy(null, HierarchyScope.hsSections, out xml);
+
+            var doc = XDocument.Parse(xml);
+            if (doc.Root == null) return null;
+
+            var ns = doc.Root.Name.Namespace;
+
+            var notebook = doc.Descendants(ns + "Notebook")
+                .FirstOrDefault(n => string.Equals(
+                    n.Attribute("name")?.Value, notebookName, StringComparison.OrdinalIgnoreCase));
+
+            if (notebook == null) return null;
+
+            var section = FindSectionRecursive(notebook, ns, sectionName);
+            return section?.Attribute("ID")?.Value;
+        }
+
+        private XElement? FindSectionRecursive(XElement parent, XNamespace ns, string sectionName)
+        {
+            foreach (var child in parent.Elements())
+            {
+                if (child.Name.LocalName == "Section" &&
+                    string.Equals(child.Attribute("name")?.Value, sectionName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return child;
+                }
+
+                if (child.Name.LocalName == "SectionGroup")
+                {
+                    var found = FindSectionRecursive(child, ns, sectionName);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
     }
 }
