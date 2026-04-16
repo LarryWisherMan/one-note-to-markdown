@@ -15,6 +15,11 @@ it.
 
 ### Added
 
+- `docs/ROADMAP.md` scaffold capturing vision, primary users, the "done
+  enough to upstream" definition, out-of-scope list, and working
+  agreements (WIP limit, triage cadence, `P2` pruning). Paired with
+  `P0` / `P1` / `P2` / `idea` labels in the issue tracker for backlog
+  triage.
 - Markdown → OneNote importer now emits reference-style OneNote XML that
   mirrors the shape OneNote produces when content is authored natively:
   only two QuickStyleDefs on the page (`PageTitle`, `p`), headings styled
