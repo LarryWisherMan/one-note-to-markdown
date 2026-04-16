@@ -1,6 +1,7 @@
 using System.Text;
 using System.Xml.Linq;
 using Markdig;
+using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
@@ -194,6 +195,8 @@ public class MarkdownToOneNoteXmlConverter
                 HeadingBlock heading => CreateHeadingOe(heading),
                 ParagraphBlock paragraph => CreateParagraphOe(paragraph),
                 FencedCodeBlock codeBlock => CreateCodeBlockElement(codeBlock),
+                ListBlock listBlock => CreateListElements(listBlock),
+                Markdig.Extensions.Tables.Table table => CreateTableElement(table),
                 // Fall back to plain text for unrecognized block types
                 _ => CreatePlainTextOe(block)
             };
@@ -265,6 +268,74 @@ public class MarkdownToOneNoteXmlConverter
                 )
             )
         );
+    }
+
+    /// <summary>
+    /// Creates an OEChildren container for a list block (bullet or numbered).
+    /// </summary>
+    private XElement CreateListElements(ListBlock listBlock)
+    {
+        var container = new XElement(OneNs + "OEChildren");
+
+        foreach (var item in listBlock)
+        {
+            if (item is ListItemBlock listItem)
+            {
+                var oe = CreateListItemElement(listItem, listBlock.IsOrdered);
+                container.Add(oe);
+            }
+        }
+
+        return container;
+    }
+
+    /// <summary>
+    /// Creates a single list item OE, with optional nested OEChildren for sub-lists.
+    /// </summary>
+    private XElement CreateListItemElement(ListItemBlock listItem, bool isOrdered)
+    {
+        var oe = new XElement(OneNs + "OE");
+
+        if (isOrdered)
+        {
+            oe.Add(new XElement(OneNs + "List",
+                new XElement(OneNs + "Number",
+                    new XAttribute("numberSequence", "0"),
+                    new XAttribute("fontSize", "11.0")
+                )
+            ));
+        }
+        else
+        {
+            oe.Add(new XElement(OneNs + "List",
+                new XElement(OneNs + "Bullet",
+                    new XAttribute("bullet", "2"),
+                    new XAttribute("fontSize", "11.0")
+                )
+            ));
+        }
+
+        foreach (var child in listItem)
+        {
+            if (child is ParagraphBlock paragraph)
+            {
+                oe.Add(new XElement(OneNs + "T", new XCData(RenderInlineHtml(paragraph.Inline))));
+            }
+            else if (child is ListBlock nestedList)
+            {
+                oe.Add(CreateListElements(nestedList));
+            }
+            else
+            {
+                var converted = ConvertBlock(child);
+                if (converted != null)
+                {
+                    oe.Add(new XElement(OneNs + "OEChildren", converted));
+                }
+            }
+        }
+
+        return oe;
     }
 
     /// <summary>
@@ -393,6 +464,69 @@ public class MarkdownToOneNoteXmlConverter
 
         var url = link.Url ?? "";
         return $"<a href=\"{System.Net.WebUtility.HtmlEncode(url)}\">{text}</a>";
+    }
+
+    /// <summary>
+    /// Creates a OneNote Table element from a Markdig table block.
+    /// </summary>
+    private XElement CreateTableElement(Markdig.Extensions.Tables.Table table)
+    {
+        var columnCount = 0;
+        foreach (var row in table.OfType<TableRow>())
+        {
+            columnCount = Math.Max(columnCount, row.Count);
+            break;
+        }
+
+        if (columnCount == 0) columnCount = 1;
+        var columnWidth = Math.Max(100, 600 / columnCount);
+
+        var tableElement = new XElement(OneNs + "Table",
+            new XAttribute("bordersVisible", "true"));
+
+        var columnsElement = new XElement(OneNs + "Columns");
+        for (int i = 0; i < columnCount; i++)
+        {
+            columnsElement.Add(new XElement(OneNs + "Column",
+                new XAttribute("index", i.ToString()),
+                new XAttribute("width", columnWidth.ToString())
+            ));
+        }
+        tableElement.Add(columnsElement);
+
+        foreach (var row in table.OfType<TableRow>())
+        {
+            var rowElement = new XElement(OneNs + "Row");
+
+            foreach (var cell in row.OfType<TableCell>())
+            {
+                var cellContent = "";
+                foreach (var block in cell)
+                {
+                    if (block is ParagraphBlock p)
+                    {
+                        cellContent += RenderInlineHtml(p.Inline);
+                    }
+                }
+
+                if (row.IsHeader)
+                {
+                    cellContent = $"<b>{cellContent}</b>";
+                }
+
+                rowElement.Add(new XElement(OneNs + "Cell",
+                    new XElement(OneNs + "OEChildren",
+                        new XElement(OneNs + "OE",
+                            new XElement(OneNs + "T", new XCData(cellContent))
+                        )
+                    )
+                ));
+            }
+
+            tableElement.Add(rowElement);
+        }
+
+        return tableElement;
     }
 
     /// <summary>

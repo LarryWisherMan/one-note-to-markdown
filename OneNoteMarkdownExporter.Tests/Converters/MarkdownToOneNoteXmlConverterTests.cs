@@ -227,6 +227,62 @@ public class MarkdownToOneNoteXmlConverterTests
 
     #endregion
 
+    #region List Tests
+
+    [Fact]
+    public void Convert_BulletList_CreatesBulletElements()
+    {
+        var markdown = "- Item one\n- Item two\n- Item three";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var bullets = doc.Descendants(OneNs + "Bullet");
+        bullets.Should().HaveCount(3);
+
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("Item one"));
+        texts.Should().Contain(t => t.Contains("Item two"));
+    }
+
+    [Fact]
+    public void Convert_NumberedList_CreatesNumberElements()
+    {
+        var markdown = "1. First\n2. Second\n3. Third";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var numbers = doc.Descendants(OneNs + "Number");
+        numbers.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void Convert_NestedBulletList_UsesOEChildren()
+    {
+        var markdown = "- Parent\n  - Child\n  - Child 2\n- Parent 2";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var parentOes = doc.Descendants(OneNs + "OE")
+            .Where(oe => oe.Elements(OneNs + "List").Any());
+
+        var parentWithChildren = parentOes
+            .Where(oe => oe.Elements(OneNs + "OEChildren").Any());
+        parentWithChildren.Should().NotBeEmpty("nested list items should be inside OEChildren");
+    }
+
+    [Fact]
+    public void Convert_NestedNumberedList_UsesOEChildren()
+    {
+        var markdown = "1. Parent\n   1. Child A\n   2. Child B\n2. Parent 2";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var numbers = doc.Descendants(OneNs + "Number");
+        numbers.Should().HaveCountGreaterOrEqualTo(4);
+    }
+
+    #endregion
+
     #region Code Block Tests
 
     [Fact]
@@ -264,6 +320,40 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var text = doc.Descendants(OneNs + "T").Select(t => t.Value);
         text.Should().Contain(t => t.Contains("line1") && t.Contains("line2") && t.Contains("line3"));
+    }
+
+    #endregion
+
+    #region Table Tests
+
+    [Fact]
+    public void Convert_SimpleTable_CreatesTableElement()
+    {
+        var markdown = "| Name | Age |\n|------|-----|\n| Alice | 30 |\n| Bob | 25 |";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var tables = doc.Descendants(OneNs + "Table");
+        tables.Should().HaveCount(1);
+        tables.First().Attribute("bordersVisible")!.Value.Should().Be("true");
+
+        var columns = doc.Descendants(OneNs + "Column");
+        columns.Should().HaveCount(2);
+
+        var rows = doc.Descendants(OneNs + "Row");
+        rows.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void Convert_TableHeaderRow_RendersAsBold()
+    {
+        var markdown = "| Header1 | Header2 |\n|---------|----------|\n| Cell1 | Cell2 |";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var firstRowCells = doc.Descendants(OneNs + "Row").First()
+            .Descendants(OneNs + "T");
+        firstRowCells.Should().Contain(t => t.Value.Contains("<b>"));
     }
 
     #endregion
