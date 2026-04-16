@@ -357,4 +357,66 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     #endregion
+
+    #region Blockquote and HR Tests
+
+    [Fact]
+    public void Convert_Blockquote_RendersAsIndentedItalic()
+    {
+        var markdown = "> This is a quote";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("<i>") && t.Contains("This is a quote"));
+    }
+
+    [Fact]
+    public void Convert_HorizontalRule_CreatesOeWithDashes()
+    {
+        var markdown = "Before\n\n---\n\nAfter";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("---"));
+    }
+
+    #endregion
+
+    #region Collapsible Nesting Tests
+
+    [Fact]
+    public void Convert_CollapsibleEnabled_NestsContentUnderHeadings()
+    {
+        var markdown = "## Section\n\nParagraph under section\n\n### Sub\n\nParagraph under sub";
+        var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
+        var doc = ParseResult(result);
+
+        var h2Oes = doc.Descendants(OneNs + "OE")
+            .Where(oe => oe.Attribute("style")?.Value.Contains("16.0pt") == true);
+        h2Oes.Should().NotBeEmpty();
+
+        var h2Oe = h2Oes.First();
+        h2Oe.Elements(OneNs + "OEChildren").Should().NotBeEmpty(
+            "content after H2 should be nested inside it as OEChildren");
+    }
+
+    [Fact]
+    public void Convert_CollapsibleDisabled_FlatStructure()
+    {
+        var markdown = "## Section\n\nParagraph under section";
+        var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: false);
+        var doc = ParseResult(result);
+
+        var h2Oes = doc.Descendants(OneNs + "OE")
+            .Where(oe => oe.Attribute("style")?.Value.Contains("16.0pt") == true);
+        h2Oes.Should().NotBeEmpty();
+
+        var h2Oe = h2Oes.First();
+        h2Oe.Elements(OneNs + "OEChildren").Should().BeEmpty(
+            "collapsible is disabled, so content should be flat siblings");
+    }
+
+    #endregion
 }

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using System.Xml.Linq;
 using Markdig;
@@ -33,6 +34,17 @@ public class MarkdownToOneNoteXmlConverter
     };
 
     /// <summary>
+    /// Base path used to resolve relative image paths during a conversion call.
+    /// </summary>
+    private string? _basePath;
+
+    /// <summary>
+    /// Accumulates image XElements produced while rendering inlines inside a paragraph.
+    /// Non-null only during <see cref="CreateParagraphElement"/> execution.
+    /// </summary>
+    private List<XElement>? _pendingImageElements;
+
+    /// <summary>
     /// Converts Markdown text to OneNote page XML.
     /// </summary>
     /// <param name="markdown">The Markdown source text.</param>
@@ -42,6 +54,7 @@ public class MarkdownToOneNoteXmlConverter
     /// <returns>OneNote page XML string.</returns>
     public string Convert(string markdown, string? pageTitle = null, bool collapsible = true, string? basePath = null)
     {
+        _basePath = basePath;
         var document = Markdown.Parse(markdown, Pipeline);
 
         // Determine page title
@@ -197,6 +210,8 @@ public class MarkdownToOneNoteXmlConverter
                 FencedCodeBlock codeBlock => CreateCodeBlockElement(codeBlock),
                 ListBlock listBlock => CreateListElements(listBlock),
                 Markdig.Extensions.Tables.Table table => CreateTableElement(table),
+                QuoteBlock quoteBlock => CreateBlockquoteElement(quoteBlock),
+                ThematicBreakBlock => CreateHorizontalRuleElement(),
                 // Fall back to plain text for unrecognized block types
                 _ => CreatePlainTextOe(block)
             };
@@ -219,20 +234,52 @@ public class MarkdownToOneNoteXmlConverter
         var styledText = $"<span style='{style}'>{text}</span>";
 
         return new XElement(OneNs + "OE",
+            new XAttribute("style", style),
             new XElement(OneNs + "T",
                 new XCData(styledText)));
     }
 
     /// <summary>
     /// Creates a paragraph OE from a paragraph block.
+    /// When the paragraph contains embedded local images, the image XElements are
+    /// collected via <see cref="_pendingImageElements"/> and returned alongside (or
+    /// instead of) the text OE.
     /// </summary>
     private XElement CreateParagraphOe(ParagraphBlock paragraph)
     {
-        var html = RenderInlineHtml(paragraph.Inline);
+        return CreateParagraphElement(paragraph);
+    }
 
-        return new XElement(OneNs + "OE",
-            new XElement(OneNs + "T",
-                new XCData(html)));
+    /// <summary>
+    /// Core paragraph rendering that handles pending image elements.
+    /// </summary>
+    private XElement CreateParagraphElement(ParagraphBlock paragraph)
+    {
+        _pendingImageElements = new List<XElement>();
+        var html = RenderInlineHtml(paragraph.Inline);
+        var pending = _pendingImageElements;
+        _pendingImageElements = null;
+
+        if (pending.Count > 0 && string.IsNullOrWhiteSpace(html))
+        {
+            if (pending.Count == 1) return pending[0];
+            var container = new XElement(OneNs + "OEChildren");
+            foreach (var img in pending) container.Add(img);
+            return container;
+        }
+
+        var oe = new XElement(OneNs + "OE",
+            new XElement(OneNs + "T", new XCData(html))
+        );
+
+        if (pending.Count > 0)
+        {
+            var container = new XElement(OneNs + "OEChildren", oe);
+            foreach (var img in pending) container.Add(img);
+            return container;
+        }
+
+        return oe;
     }
 
     /// <summary>
@@ -337,6 +384,44 @@ public class MarkdownToOneNoteXmlConverter
 
         return oe;
     }
+
+    #region Blockquote and HR Support
+
+    /// <summary>
+    /// Creates an OEChildren container for a blockquote, rendering each paragraph as italic.
+    /// </summary>
+    private XElement CreateBlockquoteElement(QuoteBlock quoteBlock)
+    {
+        var children = new XElement(OneNs + "OEChildren");
+        foreach (var block in quoteBlock)
+        {
+            if (block is ParagraphBlock paragraph)
+            {
+                children.Add(new XElement(OneNs + "OE",
+                    new XElement(OneNs + "T",
+                        new XCData($"<i>{RenderInlineHtml(paragraph.Inline)}</i>"))
+                ));
+            }
+            else
+            {
+                var converted = ConvertBlock(block);
+                if (converted != null) children.Add(converted);
+            }
+        }
+        return children;
+    }
+
+    /// <summary>
+    /// Creates a horizontal rule OE containing dashes.
+    /// </summary>
+    private XElement CreateHorizontalRuleElement()
+    {
+        return new XElement(OneNs + "OE",
+            new XElement(OneNs + "T", new XCData("---"))
+        );
+    }
+
+    #endregion
 
     /// <summary>
     /// Creates a plain-text OE fallback for unrecognized block types.
