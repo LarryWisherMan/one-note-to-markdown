@@ -90,58 +90,85 @@ public class MarkdownToOneNoteXmlConverterTests
 
     #region Heading Tests
 
+    // H1 goes into the page <Title>, not into Outline OEs.
+    // H2-H6 render as OEs with quickStyleIndex="1" and inline <one:T style="..."> styling,
+    // with the text wrapped in <span style='font-weight:bold'>.
+
     [Theory]
-    [InlineData("# Heading 1", 1, "1")]
-    [InlineData("## Heading 2", 2, "2")]
-    [InlineData("### Heading 3", 3, "3")]
-    [InlineData("#### Heading 4", 4, "4")]
-    [InlineData("##### Heading 5", 5, "5")]
-    [InlineData("###### Heading 6", 6, "6")]
-    public void Convert_Heading_AppliesQuickStyleIndex(string markdown, int level, string expectedIndex)
+    [InlineData("## Heading 2", 2, "14.0pt", false)]
+    [InlineData("### Heading 3", 3, "12.0pt", false)]
+    [InlineData("#### Heading 4", 4, "11.0pt", false)]
+    [InlineData("##### Heading 5", 5, "11.0pt", true)]
+    [InlineData("###### Heading 6", 6, "11.0pt", true)]
+    public void Convert_OutlineHeading_UsesInlineSegoeUiStyle(
+        string markdown, int level, string expectedSize, bool expectItalic)
     {
-        // Arrange & Act
         var result = _converter.Convert(markdown, pageTitle: "Test");
         var doc = ParseResult(result);
 
-        // Assert
-        var outline = doc.Root!.Element(OneNs + "Outline");
-        outline.Should().NotBeNull();
+        var outline = doc.Root!.Element(OneNs + "Outline")!;
+        var oes = outline.Descendants(OneNs + "OE").ToList();
 
-        var oeChildren = outline!.Element(OneNs + "OEChildren");
-        oeChildren.Should().NotBeNull();
-
-        var oes = oeChildren!.Elements(OneNs + "OE").ToList();
-
-        // Each heading OE references its corresponding QuickStyleDef (h1 -> index 1, etc.)
-        // so OneNote renders it natively as "Heading N" with proper font, color and spacing.
         var headingText = $"Heading {level}";
-        var hasCorrectHeading = oes.Any(oe =>
+        var matches = oes.Where(oe =>
         {
+            if (oe.Attribute("quickStyleIndex")?.Value != "1") return false;
             var t = oe.Element(OneNs + "T");
-            if (t == null) return false;
-            var cdata = t.Nodes().OfType<XCData>().FirstOrDefault();
-            if (cdata == null) return false;
-            return cdata.Value.Contains(headingText) &&
-                   oe.Attribute("quickStyleIndex")?.Value == expectedIndex;
-        });
-        hasCorrectHeading.Should().BeTrue(
-            $"expected an OE with quickStyleIndex=\"{expectedIndex}\" and CDATA containing '{headingText}'");
+            var styleAttr = t?.Attribute("style")?.Value;
+            if (styleAttr == null) return false;
+            var cdata = t!.Nodes().OfType<XCData>().FirstOrDefault()?.Value;
+            if (cdata == null || !cdata.Contains(headingText)) return false;
+
+            return styleAttr.Contains("font-family:'Segoe UI'") &&
+                   styleAttr.Contains($"font-size:{expectedSize}") &&
+                   styleAttr.Contains("color:#201F1E") &&
+                   (!expectItalic || styleAttr.Contains("font-style:italic")) &&
+                   cdata.Contains("<span style='font-weight:bold'>");
+        }).ToList();
+
+        matches.Should().NotBeEmpty(
+            $"expected an OE qSI=\"1\" with inline Segoe UI {expectedSize} #201F1E " +
+            $"style and bold-span CDATA for '{headingText}'");
     }
 
     [Fact]
-    public void Convert_Page_DefinesQuickStyleDefs()
+    public void Convert_H1_GoesIntoPageTitleNotOutline()
     {
-        var result = _converter.Convert("# Anything", pageTitle: "Test");
+        var result = _converter.Convert("# Heading 1\n\nBody", pageTitle: null);
+        var doc = ParseResult(result);
+
+        var titleCdata = doc.Root!.Element(OneNs + "Title")!
+            .Element(OneNs + "OE")!.Element(OneNs + "T")!
+            .Nodes().OfType<XCData>().First().Value;
+        titleCdata.Should().Be("Heading 1");
+
+        // No OE in the Outline should carry an inline heading style or bold-span-only
+        // CDATA with the H1 text — H1 is not duplicated into the body.
+        var outlineCdata = doc.Root.Element(OneNs + "Outline")!
+            .Descendants(OneNs + "T")
+            .SelectMany(t => t.Nodes().OfType<XCData>())
+            .Select(c => c.Value);
+        outlineCdata.Should().NotContain(v => v.Contains("Heading 1"));
+    }
+
+    [Fact]
+    public void Convert_Page_DefinesOnlyPageTitleAndParagraphQuickStyleDefs()
+    {
+        var result = _converter.Convert("# Anything\n\n## Section\n\nBody", pageTitle: "Test");
         var doc = ParseResult(result);
 
         var defs = doc.Root!.Elements(OneNs + "QuickStyleDef").ToList();
-        defs.Should().NotBeEmpty();
+        defs.Should().HaveCount(2);
 
-        var names = defs.Select(d => d.Attribute("name")?.Value).ToList();
-        names.Should().Contain("PageTitle");
-        names.Should().Contain("h1");
-        names.Should().Contain("p");
-        names.Should().Contain("code");
+        defs[0].Attribute("index")!.Value.Should().Be("0");
+        defs[0].Attribute("name")!.Value.Should().Be("PageTitle");
+        defs[0].Attribute("font")!.Value.Should().Be("Calibri Light");
+        defs[0].Attribute("fontSize")!.Value.Should().Be("20.0");
+
+        defs[1].Attribute("index")!.Value.Should().Be("1");
+        defs[1].Attribute("name")!.Value.Should().Be("p");
+        defs[1].Attribute("font")!.Value.Should().Be("Calibri");
+        defs[1].Attribute("fontSize")!.Value.Should().Be("11.0");
     }
 
     #endregion
@@ -192,39 +219,42 @@ public class MarkdownToOneNoteXmlConverterTests
     #region Inline Formatting Tests
 
     [Fact]
-    public void Convert_BoldText_RendersHtmlBold()
+    public void Convert_BoldText_RendersSpanFontWeightBold()
     {
         var result = _converter.Convert("This is **bold** text", pageTitle: "Test");
         var doc = ParseResult(result);
         var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => t.Contains("<b>bold</b>"));
+        texts.Should().Contain(t => t.Contains("<span style='font-weight:bold'>bold</span>"));
     }
 
     [Fact]
-    public void Convert_ItalicText_RendersHtmlItalic()
+    public void Convert_ItalicText_RendersSpanFontStyleItalic()
     {
         var result = _converter.Convert("This is *italic* text", pageTitle: "Test");
         var doc = ParseResult(result);
         var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => t.Contains("<i>italic</i>"));
+        texts.Should().Contain(t => t.Contains("<span style='font-style:italic'>italic</span>"));
     }
 
     [Fact]
-    public void Convert_StrikethroughText_RendersHtmlDel()
+    public void Convert_StrikethroughText_RendersSpanTextDecorationLineThrough()
     {
         var result = _converter.Convert("This is ~~struck~~ text", pageTitle: "Test");
         var doc = ParseResult(result);
         var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => t.Contains("<del>struck</del>"));
+        texts.Should().Contain(t => t.Contains("<span style='text-decoration:line-through'>struck</span>"));
     }
 
     [Fact]
-    public void Convert_InlineCode_RendersConsolas()
+    public void Convert_InlineCode_RendersConsolas10pt()
     {
         var result = _converter.Convert("Use `myCommand` here", pageTitle: "Test");
         var doc = ParseResult(result);
         var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => t.Contains("font-family:Consolas") && t.Contains("myCommand"));
+        texts.Should().Contain(t =>
+            t.Contains("font-family:Consolas") &&
+            t.Contains("font-size:10.0pt") &&
+            t.Contains("myCommand"));
     }
 
     [Fact]
@@ -237,12 +267,13 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     [Fact]
-    public void Convert_BoldAndItalic_RendersBothTags()
+    public void Convert_BoldAndItalic_RendersNestedSpans()
     {
         var result = _converter.Convert("This is ***bold italic*** text", pageTitle: "Test");
         var doc = ParseResult(result);
         var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        texts.Should().Contain(t => (t.Contains("<b>") && t.Contains("<i>")) || t.Contains("<b><i>"));
+        texts.Should().Contain(t =>
+            t.Contains("font-weight:bold") && t.Contains("font-style:italic"));
     }
 
     #endregion
@@ -306,18 +337,34 @@ public class MarkdownToOneNoteXmlConverterTests
     #region Code Block Tests
 
     [Fact]
-    public void Convert_FencedCodeBlock_CreatesTableWithConsolas()
+    public void Convert_FencedCodeBlock_CreatesTableWithConsolaPerLineOes()
     {
         var markdown = "```\nvar x = 1;\nvar y = 2;\n```";
         var result = _converter.Convert(markdown, pageTitle: "Test");
         var doc = ParseResult(result);
 
-        var tables = doc.Descendants(OneNs + "Table");
+        var tables = doc.Descendants(OneNs + "Table").ToList();
         tables.Should().NotBeEmpty();
-        tables.First().Attribute("bordersVisible")!.Value.Should().Be("true");
+        var table = tables.First();
+        table.Attribute("bordersVisible")!.Value.Should().Be("true");
+        table.Attribute("hasHeaderRow")!.Value.Should().Be("true");
 
-        var text = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        text.Should().Contain(t => t.Contains("Consolas") && t.Contains("var x = 1;"));
+        // Each code line is its own OE with Consolas 9pt style on the OE itself.
+        var cellOes = table.Descendants(OneNs + "Cell").First()
+            .Descendants(OneNs + "OE").ToList();
+        cellOes.Should().HaveCountGreaterOrEqualTo(2);
+        cellOes.Should().OnlyContain(oe =>
+            oe.Attribute("style") != null &&
+            oe.Attribute("style")!.Value.Contains("font-family:Consolas") &&
+            oe.Attribute("style")!.Value.Contains("font-size:9.0pt"));
+
+        var cdataValues = cellOes
+            .SelectMany(oe => oe.Elements(OneNs + "T"))
+            .SelectMany(t => t.Nodes().OfType<XCData>())
+            .Select(c => c.Value)
+            .ToList();
+        cdataValues.Should().Contain(v => v == "var x = 1;");
+        cdataValues.Should().Contain(v => v == "var y = 2;");
     }
 
     [Fact]
@@ -332,14 +379,23 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     [Fact]
-    public void Convert_FencedCodeBlock_PreservesMultipleLines()
+    public void Convert_FencedCodeBlock_PreservesMultipleLinesAsSeparateOEs()
     {
         var markdown = "```\nline1\nline2\nline3\n```";
         var result = _converter.Convert(markdown, pageTitle: "Test");
         var doc = ParseResult(result);
 
-        var text = doc.Descendants(OneNs + "T").Select(t => t.Value);
-        text.Should().Contain(t => t.Contains("line1") && t.Contains("line2") && t.Contains("line3"));
+        var cellOes = doc.Descendants(OneNs + "Cell").First()
+            .Descendants(OneNs + "OE").ToList();
+        var cdataValues = cellOes
+            .SelectMany(oe => oe.Elements(OneNs + "T"))
+            .SelectMany(t => t.Nodes().OfType<XCData>())
+            .Select(c => c.Value)
+            .ToList();
+
+        cdataValues.Should().Contain("line1");
+        cdataValues.Should().Contain("line2");
+        cdataValues.Should().Contain("line3");
     }
 
     #endregion
@@ -355,7 +411,9 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var tables = doc.Descendants(OneNs + "Table");
         tables.Should().HaveCount(1);
-        tables.First().Attribute("bordersVisible")!.Value.Should().Be("true");
+        var table = tables.First();
+        table.Attribute("bordersVisible")!.Value.Should().Be("true");
+        table.Attribute("hasHeaderRow")!.Value.Should().Be("true");
 
         var columns = doc.Descendants(OneNs + "Column");
         columns.Should().HaveCount(2);
@@ -365,7 +423,7 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     [Fact]
-    public void Convert_TableHeaderRow_RendersAsBold()
+    public void Convert_TableHeaderRow_WrapsTextInBoldSpan()
     {
         var markdown = "| Header1 | Header2 |\n|---------|----------|\n| Cell1 | Cell2 |";
         var result = _converter.Convert(markdown, pageTitle: "Test");
@@ -373,7 +431,7 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var firstRowCells = doc.Descendants(OneNs + "Row").First()
             .Descendants(OneNs + "T");
-        firstRowCells.Should().Contain(t => t.Value.Contains("<b>"));
+        firstRowCells.Should().Contain(t => t.Value.Contains("<span style='font-weight:bold'>"));
     }
 
     #endregion
@@ -381,15 +439,18 @@ public class MarkdownToOneNoteXmlConverterTests
     #region Blockquote and HR Tests
 
     [Fact]
-    public void Convert_Blockquote_UsesQuoteQuickStyle()
+    public void Convert_Blockquote_UsesInlineItalicStyle()
     {
         var markdown = "> This is a quote";
         var result = _converter.Convert(markdown, pageTitle: "Test");
         var doc = ParseResult(result);
 
-        // Blockquote OE uses quickStyleIndex="8" (the "quote" style, italic).
+        // Blockquote OE: quickStyleIndex="1" with an inline italic style attribute.
         var quoteOes = doc.Descendants(OneNs + "OE")
-            .Where(oe => oe.Attribute("quickStyleIndex")?.Value == "8")
+            .Where(oe =>
+                oe.Attribute("quickStyleIndex")?.Value == "1" &&
+                oe.Attribute("style") is { } s &&
+                s.Value.Contains("font-style:italic"))
             .ToList();
         quoteOes.Should().NotBeEmpty();
 
@@ -413,13 +474,98 @@ public class MarkdownToOneNoteXmlConverterTests
 
     #endregion
 
+    #region Spacing Tests
+
+    // Helper — an empty/spacer OE is a qSI="1" OE whose single <one:T> CDATA is
+    // empty or whitespace.
+    private static bool IsSpacerOe(XElement oe)
+    {
+        if (oe.Attribute("quickStyleIndex")?.Value != "1") return false;
+        var t = oe.Element(OneNs + "T");
+        if (t == null) return false;
+        // Reject any OE that also carries a List (list item), Table, or child OEChildren
+        // — those are content, not spacers.
+        if (oe.Element(OneNs + "List") != null) return false;
+        if (oe.Element(OneNs + "Table") != null) return false;
+        if (oe.Element(OneNs + "OEChildren") != null) return false;
+        var cdata = t.Nodes().OfType<XCData>().FirstOrDefault()?.Value ?? "";
+        return string.IsNullOrWhiteSpace(cdata);
+    }
+
+    [Fact]
+    public void Convert_ParagraphFollowedByParagraph_EmitsSpacerOeBetween()
+    {
+        var markdown = "## Section\n\nFirst paragraph.\n\nSecond paragraph.";
+        var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
+        var doc = ParseResult(result);
+
+        var section = FindHeadingOesBySize(doc, "14.0pt").First();
+        var children = section.Element(OneNs + "OEChildren")!
+            .Elements(OneNs + "OE").ToList();
+
+        // Expect at least: first paragraph, spacer, second paragraph, spacer.
+        children.Should().HaveCountGreaterOrEqualTo(4);
+        IsSpacerOe(children[1]).Should().BeTrue("a blank spacer OE should follow the first paragraph");
+    }
+
+    [Fact]
+    public void Convert_TableAndCodeBlock_FollowedBySpacerOe()
+    {
+        var markdown = "## Section\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n```\ncode\n```\n\nTrailing.";
+        var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
+        var doc = ParseResult(result);
+
+        var section = FindHeadingOesBySize(doc, "14.0pt").First();
+        var children = section.Element(OneNs + "OEChildren")!
+            .Elements(OneNs + "OE").ToList();
+
+        // The OE that wraps the GFM Table and the OE that wraps the code-block
+        // Table should both be followed by a spacer.
+        for (int i = 0; i < children.Count - 1; i++)
+        {
+            if (children[i].Element(OneNs + "Table") != null)
+            {
+                IsSpacerOe(children[i + 1]).Should().BeTrue(
+                    $"child at index {i} wraps a Table and should be followed by a spacer");
+            }
+        }
+    }
+
+    [Fact]
+    public void Convert_HeadingOe_IsNotFollowedByStrayTopLevelSpacer()
+    {
+        // Heading OEs themselves should NOT emit a spacer after them at the
+        // sibling level — content nests inside the heading's OEChildren, and
+        // headings already have visual lead-in from the preceding block's spacer.
+        var markdown = "## First\n\nContent A\n\n## Second\n\nContent B";
+        var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
+        var doc = ParseResult(result);
+
+        var outline = doc.Root!.Element(OneNs + "Outline")!.Element(OneNs + "OEChildren")!;
+        var topLevel = outline.Elements(OneNs + "OE").ToList();
+
+        // Expect both headings to still be present and no spacer OE directly
+        // between them — the spacer lives inside the first heading's children.
+        topLevel.Where(oe => !IsSpacerOe(oe)).Should().HaveCount(2);
+    }
+
+    #endregion
+
     #region Collapsible Nesting Tests
 
-    // A heading OE is identified by its quickStyleIndex value.
-    private static IEnumerable<XElement> FindHeadingOesByQuickStyle(XDocument doc, string quickStyleIndex)
+    // A heading OE is identified by the inline font-size on its <one:T style="...">.
+    // H2 -> 14.0pt, H3 -> 12.0pt, H4-H6 -> 11.0pt.
+    private static IEnumerable<XElement> FindHeadingOesBySize(XDocument doc, string fontSize)
     {
-        return doc.Descendants(OneNs + "OE")
-            .Where(oe => oe.Attribute("quickStyleIndex")?.Value == quickStyleIndex);
+        return doc.Descendants(OneNs + "OE").Where(oe =>
+        {
+            var t = oe.Element(OneNs + "T");
+            var style = t?.Attribute("style")?.Value;
+            return style != null &&
+                   style.Contains("font-family:'Segoe UI'") &&
+                   style.Contains($"font-size:{fontSize}") &&
+                   style.Contains("color:#201F1E");
+        });
     }
 
     [Fact]
@@ -429,12 +575,9 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: true);
         var doc = ParseResult(result);
 
-        // H2 -> quickStyleIndex "2"
-        var h2Oes = FindHeadingOesByQuickStyle(doc, "2");
-        h2Oes.Should().NotBeEmpty();
-
-        var h2Oe = h2Oes.First();
-        h2Oe.Elements(OneNs + "OEChildren").Should().NotBeEmpty(
+        var h2Oe = FindHeadingOesBySize(doc, "14.0pt").FirstOrDefault();
+        h2Oe.Should().NotBeNull();
+        h2Oe!.Elements(OneNs + "OEChildren").Should().NotBeEmpty(
             "content after H2 should be nested inside it as OEChildren");
     }
 
@@ -445,11 +588,9 @@ public class MarkdownToOneNoteXmlConverterTests
         var result = _converter.Convert(markdown, pageTitle: "Test", collapsible: false);
         var doc = ParseResult(result);
 
-        var h2Oes = FindHeadingOesByQuickStyle(doc, "2");
-        h2Oes.Should().NotBeEmpty();
-
-        var h2Oe = h2Oes.First();
-        h2Oe.Elements(OneNs + "OEChildren").Should().BeEmpty(
+        var h2Oe = FindHeadingOesBySize(doc, "14.0pt").FirstOrDefault();
+        h2Oe.Should().NotBeNull();
+        h2Oe!.Elements(OneNs + "OEChildren").Should().BeEmpty(
             "collapsible is disabled, so content should be flat siblings");
     }
 
@@ -625,9 +766,105 @@ var x = 42;
     }
 
     [Fact]
+    public void Convert_ReferenceMarkdown_MatchesReferenceShape()
+    {
+        // Golden-file test against Z_SampleRef: structural shape, not byte equality.
+        // See Z_SampleRef/Reference-page.xml for the target OneNote rendering.
+        var refDir = Path.Combine(FindRepoRoot(), "Z_SampleRef");
+        var mdPath = Path.Combine(refDir, "MarkDow_VisualRef1.md");
+        if (!File.Exists(mdPath))
+            throw new FileNotFoundException($"Reference markdown not found: {mdPath}");
+
+        var markdown = File.ReadAllText(mdPath);
+        var xml = _converter.Convert(markdown, basePath: refDir);
+        var doc = ParseResult(xml);
+
+        // 1. Exactly two QuickStyleDefs: PageTitle (0) and p (1).
+        var defs = doc.Root!.Elements(OneNs + "QuickStyleDef").ToList();
+        defs.Should().HaveCount(2);
+        defs[0].Attribute("name")!.Value.Should().Be("PageTitle");
+        defs[1].Attribute("name")!.Value.Should().Be("p");
+
+        // 2. Page title taken from the leading H1.
+        doc.Root.Attribute("name")!.Value.Should()
+            .Be("Migrating AD Accounts from RC4 to AES Kerberos Encryption");
+
+        // 3. Every section heading (H2) is an OE with qSI="1" and inline
+        //    Segoe UI 14pt #201F1E style on <one:T>, wrapping text in a bold span.
+        // Distinctive ASCII fragments that should survive HTML-encoding intact
+        // (the converter encodes apostrophes etc., so we avoid them here).
+        var expectedSectionFragments = new[]
+        {
+            "Happening",
+            "SupportedEncryptionTypes",
+            "How to Migrate an Account",
+            "Finding Accounts That Need Attention",
+            "Monitoring After Changes",
+            "If Something Breaks",
+            "References"
+        };
+        foreach (var fragment in expectedSectionFragments)
+        {
+            var matches = FindHeadingOesBySize(doc, "14.0pt").Where(oe =>
+            {
+                var cdata = oe.Element(OneNs + "T")!
+                    .Nodes().OfType<XCData>().First().Value;
+                return cdata.Contains(fragment) &&
+                       cdata.Contains("<span style='font-weight:bold'>");
+            });
+            matches.Should().NotBeEmpty(
+                $"expected a 14pt Segoe UI bold heading containing '{fragment}'");
+        }
+
+        // 4. All fenced code blocks become one-column Tables with per-line
+        //    Consolas-9pt OEs inside the cell.
+        var codeTables = doc.Descendants(OneNs + "Table").Where(t =>
+            t.Element(OneNs + "Columns")?.Elements(OneNs + "Column").Count() == 1).ToList();
+        codeTables.Should().NotBeEmpty("markdown has fenced code blocks");
+        foreach (var table in codeTables)
+        {
+            var cellOes = table.Descendants(OneNs + "Cell").First()
+                .Descendants(OneNs + "OE");
+            cellOes.Should().OnlyContain(oe =>
+                oe.Attribute("style") != null &&
+                oe.Attribute("style")!.Value.Contains("font-family:Consolas") &&
+                oe.Attribute("style")!.Value.Contains("font-size:9.0pt"));
+        }
+
+        // 5. Markdown tables keep hasHeaderRow and bold-span header cells.
+        var gfmTables = doc.Descendants(OneNs + "Table").Where(t =>
+            (t.Element(OneNs + "Columns")?.Elements(OneNs + "Column").Count() ?? 0) > 1).ToList();
+        gfmTables.Should().NotBeEmpty("markdown has 2-column and 3-column tables");
+        foreach (var table in gfmTables)
+        {
+            table.Attribute("hasHeaderRow")!.Value.Should().Be("true");
+            var headerRow = table.Elements(OneNs + "Row").First();
+            var headerCdata = headerRow.Descendants(OneNs + "T")
+                .SelectMany(t => t.Nodes().OfType<XCData>())
+                .Select(c => c.Value);
+            headerCdata.Should().OnlyContain(v => v.Contains("<span style='font-weight:bold'>"));
+        }
+
+        // 6. Blockquote rendered as inline italic style, not qSI="8".
+        doc.Descendants(OneNs + "OE")
+            .Where(oe => oe.Attribute("quickStyleIndex")?.Value == "8")
+            .Should().BeEmpty("no legacy 'quote' QuickStyleDef should be referenced");
+
+        // 7. Reference links render as anchors.
+        var anchorTexts = doc.Descendants(OneNs + "T")
+            .SelectMany(t => t.Nodes().OfType<XCData>())
+            .Select(c => c.Value)
+            .Where(v => v.Contains("<a href=\""))
+            .ToList();
+        anchorTexts.Should().HaveCountGreaterOrEqualTo(5,
+            "References section has 5 links");
+    }
+
+    [Fact]
     public void DumpSampleXml_ForManualInspection()
     {
-        var samplesDir = Path.Combine(FindRepoRoot(), "samples");
+        var repoRoot = FindRepoRoot();
+        var samplesDir = Path.Combine(repoRoot, "samples");
         var outputDir = Path.Combine(samplesDir, "output");
         Directory.CreateDirectory(outputDir);
 
@@ -637,6 +874,17 @@ var x = 42;
             var xml = _converter.Convert(markdown, basePath: samplesDir);
             var outputPath = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(file) + ".xml");
             File.WriteAllText(outputPath, xml);
+        }
+
+        // Also emit a converted version of the Z_SampleRef visual reference so the
+        // dev can diff it against Z_SampleRef/Reference-page.xml by eye.
+        var refDir = Path.Combine(repoRoot, "Z_SampleRef");
+        var refMd = Path.Combine(refDir, "MarkDow_VisualRef1.md");
+        if (File.Exists(refMd))
+        {
+            var xml = _converter.Convert(File.ReadAllText(refMd), basePath: refDir);
+            File.WriteAllText(
+                Path.Combine(refDir, "MarkDow_VisualRef1.converted.xml"), xml);
         }
 
         Directory.GetFiles(outputDir, "*.xml").Length.Should().BeGreaterThan(0);

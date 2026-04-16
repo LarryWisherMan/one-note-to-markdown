@@ -21,17 +21,33 @@ public class MarkdownToOneNoteXmlConverter
         .Build();
 
     /// <summary>
-    /// Heading style definitions: level -> (size, bold, italic).
+    /// Inline heading style values applied to <one:T style="..."> on an OE whose
+    /// quickStyleIndex is "1" (the "p" paragraph style). Headings are differentiated
+    /// by this inline style — we don't define per-level QuickStyleDefs. Matches the
+    /// pattern OneNote produces when content is authored on the web.
     /// </summary>
-    private static readonly Dictionary<int, (string Size, bool Bold, bool Italic)> HeadingStyles = new()
+    private static readonly Dictionary<int, (string Size, bool Italic)> HeadingStyles = new()
     {
-        { 1, ("20.0pt", true, false) },
-        { 2, ("16.0pt", true, false) },
-        { 3, ("13.0pt", true, false) },
-        { 4, ("12.0pt", true, false) },
-        { 5, ("11.0pt", true, false) },
-        { 6, ("11.0pt", true, true) },
+        // H1 is consumed as the page Title, so this entry is only used when a second
+        // H1 appears in the body (uncommon). Rendered at H2 scale.
+        { 1, ("14.0pt", false) },
+        { 2, ("14.0pt", false) },
+        { 3, ("12.0pt", false) },
+        { 4, ("11.0pt", false) },
+        { 5, ("11.0pt", true) },
+        { 6, ("11.0pt", true) },
     };
+
+    private const string HeadingColor = "#201F1E";
+    private const string HeadingFont = "'Segoe UI'";
+    private const string BodyFont = "'Segoe UI'";
+    private const string BodySize = "11.0pt";
+    private const string InlineCodeStyle = "font-family:Consolas;font-size:10.0pt";
+    private const string CodeBlockStyle = "font-family:Consolas;font-size:9.0pt";
+    private const string BoldSpanOpen = "<span style='font-weight:bold'>";
+    private const string ItalicSpanOpen = "<span style='font-style:italic'>";
+    private const string StrikeSpanOpen = "<span style='text-decoration:line-through'>";
+    private const string SpanClose = "</span>";
 
     /// <summary>
     /// Base path used to resolve relative image paths during a conversion call.
@@ -91,73 +107,37 @@ public class MarkdownToOneNoteXmlConverter
         return doc.Declaration + "\n" + doc.Root!.ToString();
     }
 
-    // QuickStyleIndex constants (must match indices used in BuildQuickStyleDefs).
+    // Only two QuickStyleDefs are emitted — PageTitle for the page title, and
+    // "p" (quickStyleIndex="1") for every other OE on the page. All other style
+    // differentiation (headings, code lines, blockquotes) is done via inline
+    // style attributes on the OE or the <one:T>.
     private const string QuickStylePageTitle = "0";
-    private const string QuickStyleH1 = "1";
-    private const string QuickStyleH2 = "2";
-    private const string QuickStyleH3 = "3";
-    private const string QuickStyleH4 = "4";
-    private const string QuickStyleH5 = "5";
-    private const string QuickStyleH6 = "6";
-    private const string QuickStyleCite = "7";
-    private const string QuickStyleQuote = "8";
-    private const string QuickStyleCode = "9";
-    private const string QuickStyleP = "10";
+    private const string QuickStyleP = "1";
 
     /// <summary>
-    /// Builds QuickStyleDef elements matching OneNote's built-in paragraph styles,
-    /// so headings render as native "Heading 1", "Heading 2", etc.
+    /// Emits the two page-level QuickStyleDefs: PageTitle and p.
     /// </summary>
     private static IEnumerable<XElement> BuildQuickStyleDefs()
     {
         return new[]
         {
-            QuickStyle("0", "PageTitle", "Calibri Light", "20.0", color: "automatic"),
-            QuickStyle("1", "h1", "Calibri Light", "16.0", color: "#1E4E79", spaceBefore: "12.0", spaceAfter: "3.0"),
-            QuickStyle("2", "h2", "Calibri Light", "14.0", color: "#2E75B6", spaceBefore: "10.0", spaceAfter: "2.0"),
-            QuickStyle("3", "h3", "Calibri Light", "12.0", color: "#5B9BD5", spaceBefore: "8.0", spaceAfter: "2.0"),
-            QuickStyle("4", "h4", "Calibri", "12.0", color: "#2E75B6", italic: true, spaceBefore: "6.0", spaceAfter: "2.0"),
-            QuickStyle("5", "h5", "Calibri", "11.0", color: "automatic", bold: true, spaceBefore: "6.0", spaceAfter: "2.0"),
-            QuickStyle("6", "h6", "Calibri", "11.0", color: "#666666", italic: true, bold: true, spaceBefore: "6.0", spaceAfter: "2.0"),
-            QuickStyle("7", "cite", "Calibri", "9.0", color: "#808080", italic: true),
-            QuickStyle("8", "quote", "Calibri", "11.0", color: "automatic", italic: true),
-            QuickStyle("9", "code", "Consolas", "9.0", color: "automatic"),
-            QuickStyle("10", "p", "Calibri", "11.0", color: "automatic")
+            QuickStyle(QuickStylePageTitle, "PageTitle", "Calibri Light", "20.0"),
+            QuickStyle(QuickStyleP, "p", "Calibri", "11.0")
         };
     }
 
-    private static XElement QuickStyle(
-        string index, string name, string font, string fontSize,
-        string color = "automatic",
-        bool bold = false, bool italic = false,
-        string spaceBefore = "0.0", string spaceAfter = "0.0")
+    private static XElement QuickStyle(string index, string name, string font, string fontSize)
     {
-        var attrs = new List<XAttribute>
-        {
+        return new XElement(OneNs + "QuickStyleDef",
             new XAttribute("index", index),
             new XAttribute("name", name),
-            new XAttribute("fontColor", color),
+            new XAttribute("fontColor", "automatic"),
             new XAttribute("highlightColor", "automatic"),
             new XAttribute("font", font),
             new XAttribute("fontSize", fontSize),
-            new XAttribute("spaceBefore", spaceBefore),
-            new XAttribute("spaceAfter", spaceAfter)
-        };
-        if (bold) attrs.Add(new XAttribute("bold", "true"));
-        if (italic) attrs.Add(new XAttribute("italic", "true"));
-        return new XElement(OneNs + "QuickStyleDef", attrs);
+            new XAttribute("spaceBefore", "0.0"),
+            new XAttribute("spaceAfter", "0.0"));
     }
-
-    private static string QuickStyleIndexFor(int headingLevel) => headingLevel switch
-    {
-        1 => QuickStyleH1,
-        2 => QuickStyleH2,
-        3 => QuickStyleH3,
-        4 => QuickStyleH4,
-        5 => QuickStyleH5,
-        6 => QuickStyleH6,
-        _ => QuickStyleP
-    };
 
     /// <summary>
     /// Extracts the plain text from the first H1 heading in the document.
@@ -242,30 +222,68 @@ public class MarkdownToOneNoteXmlConverter
 
     /// <summary>
     /// Flat conversion: each block becomes a top-level OE.
+    /// The first H1 is skipped because it has already been consumed as the page Title.
+    /// Non-heading blocks are followed by a blank-line spacer OE — OneNote has no
+    /// inter-paragraph margin by default, so explicit blank OEs are what gives the
+    /// rendered page its visual breathing room (matching the reference page).
     /// </summary>
     private List<XElement> ConvertBlocksFlat(MarkdownDocument document)
     {
         var elements = new List<XElement>();
+        var firstH1Skipped = false;
         foreach (var block in document)
         {
-            AddElement(elements, ConvertBlock(block));
+            if (!firstH1Skipped && block is HeadingBlock { Level: 1 })
+            {
+                firstH1Skipped = true;
+                continue;
+            }
+            var el = ConvertBlock(block);
+            if (el == null) continue;
+            AddElement(elements, el);
+            if (block is not HeadingBlock)
+            {
+                elements.Add(CreateSpacerOe());
+            }
         }
         return elements;
     }
 
     /// <summary>
+    /// An empty OE that renders as a blank line. Used between content blocks to
+    /// give the page visual spacing — OneNote doesn't derive inter-block margins
+    /// from QuickStyleDef spaceBefore/spaceAfter when those are 0.0, so we emit
+    /// explicit spacers (the same pattern the reference page uses).
+    /// </summary>
+    private XElement CreateSpacerOe()
+    {
+        return new XElement(OneNs + "OE",
+            new XAttribute("quickStyleIndex", QuickStyleP),
+            new XAttribute("style", $"font-family:{BodyFont};font-size:{BodySize}"),
+            new XElement(OneNs + "T", new XCData("")));
+    }
+
+    /// <summary>
     /// Collapsible conversion: content between headings nests inside heading OEChildren.
     /// Uses a stack-based approach where headings push onto the stack and pop when
-    /// a same-or-higher level heading appears.
+    /// a same-or-higher level heading appears. The first H1 is skipped because it has
+    /// already been consumed as the page Title.
     /// </summary>
     private List<XElement> ConvertBlocksCollapsible(MarkdownDocument document)
     {
         var topLevel = new List<XElement>();
         // Stack of (headingLevel, headingOE, childrenContainer)
         var stack = new Stack<(int Level, XElement Oe, XElement Children)>();
+        var firstH1Skipped = false;
 
         foreach (var block in document)
         {
+            if (!firstH1Skipped && block is HeadingBlock { Level: 1 })
+            {
+                firstH1Skipped = true;
+                continue;
+            }
+
             if (block is HeadingBlock heading)
             {
                 var headingOe = CreateHeadingOe(heading);
@@ -303,10 +321,12 @@ public class MarkdownToOneNoteXmlConverter
                     {
                         // Unwrap OEChildren so list items become siblings, not nested containers
                         AddElementToXContainer(stack.Peek().Children, el);
+                        stack.Peek().Children.Add(CreateSpacerOe());
                     }
                     else
                     {
                         AddElement(topLevel, el);
+                        topLevel.Add(CreateSpacerOe());
                     }
                 }
             }
@@ -355,21 +375,26 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
-    /// Creates a heading OE with appropriate font styling.
+    /// Creates a heading OE. All headings use quickStyleIndex="1" (the page-level
+    /// "p" style); the heading appearance comes from an inline style attribute on
+    /// <one:T> (Segoe UI at the level-specific size, #201F1E), plus a
+    /// <c>&lt;span style='font-weight:bold'&gt;</c> wrapping the text inside the CDATA.
     /// </summary>
     private XElement CreateHeadingOe(HeadingBlock heading)
     {
-        var text = RenderInlineHtml(heading.Inline);
-        var quickStyleIdx = QuickStyleIndexFor(heading.Level);
+        var (size, italic) = HeadingStyles.TryGetValue(heading.Level, out var s)
+            ? s : ("11.0pt", false);
 
-        // quickStyleIndex references a page-level QuickStyleDef. OneNote renders this
-        // as a native "Heading N" paragraph style with proper font, color, and spacing.
-        // Children under this OE's OEChildren will use the default "p" style, not the
-        // heading style, because they'll get their own quickStyleIndex.
+        var inner = RenderInlineHtml(heading.Inline);
+
+        var tStyle = $"font-family:{HeadingFont};font-size:{size};color:{HeadingColor}";
+        if (italic) tStyle += ";font-style:italic";
+
         return new XElement(OneNs + "OE",
-            new XAttribute("quickStyleIndex", quickStyleIdx),
+            new XAttribute("quickStyleIndex", QuickStyleP),
             new XElement(OneNs + "T",
-                new XCData(text)));
+                new XAttribute("style", tStyle),
+                new XCData($"{BoldSpanOpen}{inner}{SpanClose}")));
     }
 
     /// <summary>
@@ -404,6 +429,7 @@ public class MarkdownToOneNoteXmlConverter
 
         var oe = new XElement(OneNs + "OE",
             new XAttribute("quickStyleIndex", QuickStyleP),
+            new XAttribute("style", $"font-family:{BodyFont};font-size:{BodySize}"),
             new XElement(OneNs + "T", new XCData(html))
         );
 
@@ -418,35 +444,44 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
-    /// Creates a bordered single-cell table for a fenced code block, using Consolas font.
+    /// Creates a bordered single-cell table for a fenced code block. Each code line
+    /// becomes its own OE inside the cell's OEChildren (matching OneNote's native
+    /// per-line form), with the Consolas/9pt style applied directly to the OE.
     /// </summary>
     private XElement CreateCodeBlockElement(FencedCodeBlock codeBlock)
     {
-        var lines = new List<string>();
+        var lineOes = new List<XElement>();
         foreach (var line in codeBlock.Lines)
         {
-            var text = line.ToString();
-            if (text != null)
-                lines.Add(System.Net.WebUtility.HtmlEncode(text));
+            var text = line.ToString() ?? "";
+            lineOes.Add(new XElement(OneNs + "OE",
+                new XAttribute("quickStyleIndex", QuickStyleP),
+                new XAttribute("style", CodeBlockStyle),
+                new XElement(OneNs + "T", new XCData(text))));
         }
 
-        var codeHtml = $"<span style='font-family:Consolas;font-size:9pt'>{string.Join("<br/>", lines)}</span>";
+        // Guard against empty code blocks — always emit at least one OE so the Cell
+        // isn't malformed.
+        if (lineOes.Count == 0)
+        {
+            lineOes.Add(new XElement(OneNs + "OE",
+                new XAttribute("quickStyleIndex", QuickStyleP),
+                new XAttribute("style", CodeBlockStyle),
+                new XElement(OneNs + "T", new XCData(""))));
+        }
 
         return new XElement(OneNs + "Table",
             new XAttribute("bordersVisible", "true"),
+            new XAttribute("hasHeaderRow", "true"),
             new XElement(OneNs + "Columns",
                 new XElement(OneNs + "Column",
                     new XAttribute("index", "0"),
-                    new XAttribute("width", "600")
+                    new XAttribute("width", "540")
                 )
             ),
             new XElement(OneNs + "Row",
                 new XElement(OneNs + "Cell",
-                    new XElement(OneNs + "OEChildren",
-                        new XElement(OneNs + "OE",
-                            new XElement(OneNs + "T", new XCData(codeHtml))
-                        )
-                    )
+                    new XElement(OneNs + "OEChildren", lineOes)
                 )
             )
         );
@@ -492,10 +527,13 @@ public class MarkdownToOneNoteXmlConverter
 
     /// <summary>
     /// Creates a single list item OE, with optional nested OEChildren for sub-lists.
+    /// The OE carries the Segoe UI 11pt inline style so the item matches paragraph body.
     /// </summary>
     private XElement CreateListItemElement(ListItemBlock listItem, bool isOrdered)
     {
-        var oe = new XElement(OneNs + "OE");
+        var oe = new XElement(OneNs + "OE",
+            new XAttribute("quickStyleIndex", QuickStyleP),
+            new XAttribute("style", $"font-family:{BodyFont};font-size:{BodySize}"));
 
         if (isOrdered)
         {
@@ -544,7 +582,9 @@ public class MarkdownToOneNoteXmlConverter
     #region Blockquote and HR Support
 
     /// <summary>
-    /// Creates an OEChildren container for a blockquote, rendering each paragraph as italic.
+    /// Creates an OEChildren container for a blockquote. Each paragraph renders as
+    /// an OE with an inline italic style override (Segoe UI 11pt italic), since we
+    /// no longer define a dedicated 'quote' QuickStyleDef.
     /// </summary>
     private XElement CreateBlockquoteElement(QuoteBlock quoteBlock)
     {
@@ -554,7 +594,9 @@ public class MarkdownToOneNoteXmlConverter
             if (block is ParagraphBlock paragraph)
             {
                 children.Add(new XElement(OneNs + "OE",
-                    new XAttribute("quickStyleIndex", QuickStyleQuote),
+                    new XAttribute("quickStyleIndex", QuickStyleP),
+                    new XAttribute("style",
+                        $"font-family:{BodyFont};font-size:{BodySize};font-style:italic"),
                     new XElement(OneNs + "T",
                         new XCData(RenderInlineHtml(paragraph.Inline)))
                 ));
@@ -575,6 +617,7 @@ public class MarkdownToOneNoteXmlConverter
     {
         return new XElement(OneNs + "OE",
             new XAttribute("quickStyleIndex", QuickStyleP),
+            new XAttribute("style", $"font-family:{BodyFont};font-size:{BodySize}"),
             new XElement(OneNs + "T", new XCData("---"))
         );
     }
@@ -633,7 +676,7 @@ public class MarkdownToOneNoteXmlConverter
         {
             LiteralInline literal => System.Net.WebUtility.HtmlEncode(literal.ToString()),
             EmphasisInline emphasis => RenderEmphasis(emphasis),
-            CodeInline code => $"<span style='font-family:Consolas;font-size:9pt'>{System.Net.WebUtility.HtmlEncode(code.Content)}</span>",
+            CodeInline code => $"<span style='{InlineCodeStyle}'>{System.Net.WebUtility.HtmlEncode(code.Content)}</span>",
             LinkInline link => RenderLink(link),
             LineBreakInline => "<br/>",
             HtmlInline html => html.Tag,
@@ -644,7 +687,8 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
-    /// Renders emphasis (bold/italic) inline.
+    /// Renders emphasis (bold, italic, strikethrough) as <c>&lt;span style='...'&gt;</c>
+    /// — matching the form OneNote uses natively for inline styling.
     /// </summary>
     private string RenderEmphasis(EmphasisInline emphasis)
     {
@@ -661,15 +705,15 @@ public class MarkdownToOneNoteXmlConverter
         {
             if (emphasis.DelimiterCount == 2)
             {
-                return $"<b>{content}</b>";
+                return $"{BoldSpanOpen}{content}{SpanClose}";
             }
-            return $"<i>{content}</i>";
+            return $"{ItalicSpanOpen}{content}{SpanClose}";
         }
 
         // Strikethrough uses '~'
         if (emphasis.DelimiterChar == '~')
         {
-            return $"<del>{content}</del>";
+            return $"{StrikeSpanOpen}{content}{SpanClose}";
         }
 
         return content;
@@ -748,7 +792,8 @@ public class MarkdownToOneNoteXmlConverter
         var columnWidth = Math.Max(100, 600 / columnCount);
 
         var tableElement = new XElement(OneNs + "Table",
-            new XAttribute("bordersVisible", "true"));
+            new XAttribute("bordersVisible", "true"),
+            new XAttribute("hasHeaderRow", "true"));
 
         var columnsElement = new XElement(OneNs + "Columns");
         for (int i = 0; i < columnCount; i++)
@@ -777,12 +822,13 @@ public class MarkdownToOneNoteXmlConverter
 
                 if (row.IsHeader)
                 {
-                    cellContent = $"<b>{cellContent}</b>";
+                    cellContent = $"{BoldSpanOpen}{cellContent}{SpanClose}";
                 }
 
                 rowElement.Add(new XElement(OneNs + "Cell",
                     new XElement(OneNs + "OEChildren",
                         new XElement(OneNs + "OE",
+                            new XAttribute("quickStyleIndex", QuickStyleP),
                             new XElement(OneNs + "T", new XCData(cellContent))
                         )
                     )
