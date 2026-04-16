@@ -1,0 +1,91 @@
+<Page name="Code Blocks and Quotes" xmlns="http://schemas.microsoft.com/office/onenote/2013/onenote">
+  <Title>
+    <OE>
+      <T><![CDATA[Code Blocks and Quotes]]></T>
+    </OE>
+  </Title>
+  <Outline>
+    <OEChildren>
+      <OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
+        <T><![CDATA[Code Blocks and Quotes]]></T>
+        <OEChildren>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Inline Code]]></T>
+            <OEChildren>
+              <OE>
+                <T><![CDATA[Use the <span style='font-family:Consolas;font-size:9pt'>dotnet build</span> command to compile.]]></T>
+              </OE>
+            </OEChildren>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Fenced Code Block]]></T>
+            <OEChildren>
+              <Table bordersVisible="true">
+                <Columns>
+                  <Column index="0" width="600" />
+                </Columns>
+                <Row>
+                  <Cell>
+                    <OEChildren>
+                      <OE>
+                        <T><![CDATA[<span style='font-family:Consolas;font-size:9pt'>public class HelloWorld<br/>{<br/>    public static void Main(string[] args)<br/>    {<br/>        Console.WriteLine(&quot;Hello, OneNote!&quot;);<br/>    }<br/>}</span>]]></T>
+                      </OE>
+                    </OEChildren>
+                  </Cell>
+                </Row>
+              </Table>
+            </OEChildren>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Another Code Block]]></T>
+            <OEChildren>
+              <Table bordersVisible="true">
+                <Columns>
+                  <Column index="0" width="600" />
+                </Columns>
+                <Row>
+                  <Cell>
+                    <OEChildren>
+                      <OE>
+                        <T><![CDATA[<span style='font-family:Consolas;font-size:9pt'>{<br/>  &quot;name&quot;: &quot;test&quot;,<br/>  &quot;version&quot;: &quot;1.0.0&quot;,<br/>  &quot;scripts&quot;: {<br/>    &quot;build&quot;: &quot;dotnet publish&quot;<br/>  }<br/>}</span>]]></T>
+                      </OE>
+                    </OEChildren>
+                  </Cell>
+                </Row>
+              </Table>
+            </OEChildren>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Blockquotes]]></T>
+            <OEChildren>
+              <OEChildren>
+                <OE>
+                  <T><![CDATA[<i>This is a quoted paragraph. It should render as indented italic text in OneNote.</i>]]></T>
+                </OE>
+              </OEChildren>
+              <OEChildren>
+                <OE>
+                  <T><![CDATA[<i>Another quote with <b>bold</b> inside it.</i>]]></T>
+                </OE>
+              </OEChildren>
+            </OEChildren>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Horizontal Rule]]></T>
+            <OEChildren>
+              <OE>
+                <T><![CDATA[Content above the rule.]]></T>
+              </OE>
+              <OE>
+                <T><![CDATA[---]]></T>
+              </OE>
+              <OE>
+                <T><![CDATA[Content below the rule.]]></T>
+              </OE>
+            </OEChildren>
+          </OE>
+        </OEChildren>
+      </OE>
+    </OEChildren>
+  </Outline>
+</Page>

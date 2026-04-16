@@ -212,6 +212,8 @@ public class MarkdownToOneNoteXmlConverter
                 Markdig.Extensions.Tables.Table table => CreateTableElement(table),
                 QuoteBlock quoteBlock => CreateBlockquoteElement(quoteBlock),
                 ThematicBreakBlock => CreateHorizontalRuleElement(),
+                // Skip metadata blocks that have no visual content
+                LinkReferenceDefinitionGroup => null,
                 // Fall back to plain text for unrecognized block types
                 _ => CreatePlainTextOe(block)
             };
@@ -231,12 +233,10 @@ public class MarkdownToOneNoteXmlConverter
         var text = RenderInlineHtml(heading.Inline);
         var style = GetHeadingStyle(heading.Level);
 
-        var styledText = $"<span style='{style}'>{text}</span>";
-
         return new XElement(OneNs + "OE",
             new XAttribute("style", style),
             new XElement(OneNs + "T",
-                new XCData(styledText)));
+                new XCData(text)));
     }
 
     /// <summary>

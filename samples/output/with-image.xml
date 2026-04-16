@@ -1,0 +1,47 @@
+<Page name="Page With Image" xmlns="http://schemas.microsoft.com/office/onenote/2013/onenote">
+  <Title>
+    <OE>
+      <T><![CDATA[Page With Image]]></T>
+    </OE>
+  </Title>
+  <Outline>
+    <OEChildren>
+      <OE style="font-family:Segoe UI;font-size:20.0pt;font-weight:bold">
+        <T><![CDATA[Page With Image]]></T>
+        <OEChildren>
+          <OE>
+            <T><![CDATA[This page tests local image embedding.]]></T>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[The Logo]]></T>
+            <OEChildren>
+              <OE>
+                <T><![CDATA[Here is our logo:]]></T>
+              </OE>
+              <Image>
+                <Data>iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAG0lEQVQI12NgYPgPAAEBAAUY2EoAAAAAAElFTkSuQmCC</Data>
+              </Image>
+              <OE>
+                <T><![CDATA[And here is text after the image.]]></T>
+              </OE>
+            </OEChildren>
+          </OE>
+          <OE style="font-family:Segoe UI;font-size:16.0pt;font-weight:bold">
+            <T><![CDATA[Missing Image]]></T>
+            <OEChildren>
+              <OE>
+                <T><![CDATA[This references a file that doesn&#39;t exist:]]></T>
+              </OE>
+              <OE>
+                <T><![CDATA[[Image not found: assets/nonexistent.png]]]></T>
+              </OE>
+              <OE>
+                <T><![CDATA[It should show a placeholder instead of crashing.]]></T>
+              </OE>
+            </OEChildren>
+          </OE>
+        </OEChildren>
+      </OE>
+    </OEChildren>
+  </Outline>
+</Page>

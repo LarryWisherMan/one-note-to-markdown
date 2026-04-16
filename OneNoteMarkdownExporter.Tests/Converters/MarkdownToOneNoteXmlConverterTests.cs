@@ -109,20 +109,21 @@ public class MarkdownToOneNoteXmlConverterTests
 
         var oes = oeChildren!.Elements(OneNs + "OE").ToList();
 
-        // Find the OE that has a T with the heading text and correct font-size style
+        // Find the OE that has the heading text and correct font-size in its style attribute
         var headingText = $"Heading {level}";
         var hasCorrectHeading = oes.Any(oe =>
         {
+            var style = oe.Attribute("style")?.Value ?? "";
             var t = oe.Element(OneNs + "T");
             if (t == null) return false;
             var cdata = t.Nodes().OfType<XCData>().FirstOrDefault();
             if (cdata == null) return false;
             return cdata.Value.Contains(headingText) &&
-                   cdata.Value.Contains($"font-size:{expectedSize}") &&
-                   cdata.Value.Contains("font-weight:bold");
+                   style.Contains($"font-size:{expectedSize}") &&
+                   style.Contains("font-weight:bold");
         });
         hasCorrectHeading.Should().BeTrue(
-            $"expected an OE > T with '{headingText}' styled at font-size:{expectedSize} and font-weight:bold");
+            $"expected an OE with style containing font-size:{expectedSize} and font-weight:bold, with T containing '{headingText}'");
     }
 
     #endregion
@@ -538,6 +539,94 @@ var x = 42;
         doc.Descendants(OneNs + "Table").Should().NotBeEmpty();
         doc.Descendants(OneNs + "T").Select(t => t.Value)
             .Should().Contain(t => t.Contains("href=\"https://example.com\""));
+    }
+
+    #endregion
+
+    #region Sample File Tests
+
+    [Theory]
+    [InlineData("basic-formatting.md", "Basic Formatting Test")]
+    [InlineData("lists-and-tables.md", "Lists and Tables")]
+    [InlineData("code-and-quotes.md", "Code Blocks and Quotes")]
+    [InlineData("collapsible-sections.md", "Project Documentation")]
+    public void Convert_SampleFile_ProducesValidXml(string filename, string expectedTitle)
+    {
+        var samplesDir = Path.Combine(FindRepoRoot(), "samples");
+        var filePath = Path.Combine(samplesDir, filename);
+
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"Sample file not found: {filePath}");
+
+        var markdown = File.ReadAllText(filePath);
+        var result = _converter.Convert(markdown, basePath: samplesDir);
+        var doc = ParseResult(result);
+
+        doc.Root!.Name.Should().Be(OneNs + "Page");
+        doc.Root.Attribute("name")!.Value.Should().Be(expectedTitle);
+        doc.Descendants(OneNs + "Title").Should().HaveCount(1);
+        doc.Descendants(OneNs + "Outline").Should().HaveCount(1);
+        doc.Descendants(OneNs + "T").Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Convert_SampleWithImage_EmbedsImageData()
+    {
+        var samplesDir = Path.Combine(FindRepoRoot(), "samples");
+        var filePath = Path.Combine(samplesDir, "with-image.md");
+
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"Sample file not found: {filePath}");
+
+        var markdown = File.ReadAllText(filePath);
+        var result = _converter.Convert(markdown, basePath: samplesDir);
+        var doc = ParseResult(result);
+
+        // Should have at least one embedded image
+        doc.Descendants(OneNs + "Image").Should().NotBeEmpty();
+        doc.Descendants(OneNs + "Data").Should().NotBeEmpty();
+
+        // Should have placeholder for missing image
+        doc.Descendants(OneNs + "T").Select(t => t.Value)
+            .Should().Contain(t => t.Contains("[Image not found:"));
+    }
+
+    [Fact]
+    public void DumpSampleXml_ForManualInspection()
+    {
+        var samplesDir = Path.Combine(FindRepoRoot(), "samples");
+        var outputDir = Path.Combine(samplesDir, "output");
+        Directory.CreateDirectory(outputDir);
+
+        foreach (var file in Directory.GetFiles(samplesDir, "*.md"))
+        {
+            var markdown = File.ReadAllText(file);
+            var xml = _converter.Convert(markdown, basePath: samplesDir);
+            var outputPath = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(file) + ".xml");
+            File.WriteAllText(outputPath, xml);
+        }
+
+        Directory.GetFiles(outputDir, "*.xml").Length.Should().BeGreaterThan(0);
+    }
+
+    private static string FindRepoRoot()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir, "samples")))
+                return dir;
+            dir = Path.GetDirectoryName(dir);
+        }
+        // Fallback: walk up from current directory
+        dir = Directory.GetCurrentDirectory();
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir, "samples")))
+                return dir;
+            dir = Path.GetDirectoryName(dir);
+        }
+        throw new DirectoryNotFoundException("Could not find repo root with samples/ directory");
     }
 
     #endregion
