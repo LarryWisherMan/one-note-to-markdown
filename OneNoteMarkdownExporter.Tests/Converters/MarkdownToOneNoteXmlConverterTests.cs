@@ -168,4 +168,62 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     #endregion
+
+    #region Inline Formatting Tests
+
+    [Fact]
+    public void Convert_BoldText_RendersHtmlBold()
+    {
+        var result = _converter.Convert("This is **bold** text", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("<b>bold</b>"));
+    }
+
+    [Fact]
+    public void Convert_ItalicText_RendersHtmlItalic()
+    {
+        var result = _converter.Convert("This is *italic* text", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("<i>italic</i>"));
+    }
+
+    [Fact]
+    public void Convert_StrikethroughText_RendersHtmlDel()
+    {
+        var result = _converter.Convert("This is ~~struck~~ text", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("<del>struck</del>"));
+    }
+
+    [Fact]
+    public void Convert_InlineCode_RendersConsolas()
+    {
+        var result = _converter.Convert("Use `myCommand` here", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("font-family:Consolas") && t.Contains("myCommand"));
+    }
+
+    [Fact]
+    public void Convert_Link_RendersHtmlAnchor()
+    {
+        var result = _converter.Convert("[Click here](https://example.com)", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => t.Contains("href=\"https://example.com\"") && t.Contains("Click here"));
+    }
+
+    [Fact]
+    public void Convert_BoldAndItalic_RendersBothTags()
+    {
+        var result = _converter.Convert("This is ***bold italic*** text", pageTitle: "Test");
+        var doc = ParseResult(result);
+        var texts = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        texts.Should().Contain(t => (t.Contains("<b>") && t.Contains("<i>")) || t.Contains("<b><i>"));
+    }
+
+    #endregion
 }
