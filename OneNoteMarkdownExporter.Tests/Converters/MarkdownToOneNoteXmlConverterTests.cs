@@ -489,4 +489,56 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     #endregion
+
+    #region Integration Tests
+
+    [Fact]
+    public void Convert_MixedContent_ProducesValidXml()
+    {
+        var markdown = @"# Main Title
+
+Some introductory text with **bold** and *italic*.
+
+## Section One
+
+- Bullet A
+- Bullet B
+  - Nested bullet
+
+### Code Example
+
+```csharp
+var x = 42;
+```
+
+## Section Two
+
+| Col A | Col B |
+|-------|-------|
+| 1     | 2     |
+
+> A wise quote
+
+---
+
+[A link](https://example.com)
+";
+
+        var result = _converter.Convert(markdown);
+        var doc = ParseResult(result);
+
+        // Valid XML with correct structure
+        doc.Root!.Name.Should().Be(OneNs + "Page");
+        doc.Root.Attribute("name")!.Value.Should().Be("Main Title");
+        doc.Descendants(OneNs + "Title").Should().HaveCount(1);
+        doc.Descendants(OneNs + "Outline").Should().HaveCount(1);
+
+        // Contains expected elements
+        doc.Descendants(OneNs + "Bullet").Should().NotBeEmpty();
+        doc.Descendants(OneNs + "Table").Should().NotBeEmpty();
+        doc.Descendants(OneNs + "T").Select(t => t.Value)
+            .Should().Contain(t => t.Contains("href=\"https://example.com\""));
+    }
+
+    #endregion
 }
