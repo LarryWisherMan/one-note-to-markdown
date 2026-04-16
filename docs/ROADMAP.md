@@ -11,52 +11,78 @@ of creation.
 
 ## Vision
 
-<!-- One paragraph. What is this project FOR beyond the upstream fork?
-     Who benefits from its existence? Why not just contribute to
-     upstream? If you can't articulate "here's why this fork earns its
-     keep," the fork probably shouldn't exist. -->
+**Markdown is the source of truth. OneNote is a presenter.** Notes are
+authored and version-controlled in Markdown so the knowledge base stays
+machine-readable and portable (AI / RAG / static sites / PDF / Word),
+but the same content publishes cleanly into OneNote because the primary
+audience — teammates who already live in OneNote — shouldn't have to
+change tools.
 
-_To be filled in._
+The forked upstream (`segunak/one-note-to-markdown`) is a starting
+point, not a constraint. If clean architecture needs a rewrite to
+serve the vision, rewrite it.
+
+Spiritual neighbors: Dendron, Obsidian, Docusaurus, and Microsoft's
+own documentation publishing pipeline — minimal but purposeful
+front-matter, strict authoring conventions, and one Markdown source
+fanning out to many rendered formats.
 
 ## Primary users
 
-<!-- Who uses this? Check any that apply and expand.
-     - [ ] Me, personally, exporting my own notebooks to Markdown for
-           RAG / AI tooling.
-     - [ ] Me, personally, authoring in Markdown and pushing back to
-           OneNote.
-     - [ ] Other devs in DLP-constrained orgs who hit the same wall.
-     - [ ] Automation / scheduled sync jobs.
-     - [ ] Obsidian / external-tool users pulling from OneNote.
--->
-
-_To be filled in._
+- ✅ The maintainer — authoring notes in Markdown and publishing into
+  team OneNote notebooks so collaborators keep using their preferred
+  viewer.
+- ✅ The maintainer — exporting legacy OneNote content to Markdown to
+  bring it under version control and into AI tooling.
+- 🟡 Devs in DLP-constrained orgs who hit the same `Publish()`
+  wall — welcome, but not the design target.
+- ⬜ Obsidian / external-tool users pulling from OneNote — out of
+  current focus.
+- ⬜ Team members authoring directly in OneNote for bidirectional
+  sync — explicitly deferred (see "out of scope" and the parked sync
+  idea).
 
 ## "Done enough to upstream" — v1.0.0 definition
 
-<!-- What does "this fork is worth PR-ing to segunak/one-note-to-markdown"
-     look like? Concrete list. Each item is independently verifiable.
-     Examples:
-     - [ ] Markdown importer handles the 10 sample files cleanly.
-     - [ ] Golden-file test covers the reference page.
-     - [ ] README + docs/importer.md current.
-     - [ ] No `Interop.*` COM warnings at build.
-     - [ ] GitVersion-stamped release zip signed. -->
+A concrete bar for when this fork is worth PR-ing back to upstream
+(or releasing as a standalone variant). Each item is independently
+verifiable.
 
-_To be filled in._
+- [x] Markdown → OneNote importer emits reference-style XML matching
+      a hand-authored target.
+- [x] Golden-file test against the reference page.
+- [x] `docs/importer.md` current and accurate.
+- [x] Repo foundations: GitVersion, `.editorconfig`, `CONTRIBUTING.md`,
+      `CHANGELOG.md`, Keep a Changelog discipline.
+- [ ] Front-matter schema lets a `.md` declare its OneNote target
+      (notebook/section/page name, tags, cross-refs).
+- [ ] Folder-tree convention documented: directory structure maps to
+      notebook/section/page hierarchy in a predictable way.
+- [ ] CLI publishes a whole Markdown tree (not just a single file).
+- [ ] Imports are idempotent — re-running updates the existing page
+      instead of creating a duplicate.
+- [ ] Inter-note links (`[x](./other.md)`) resolve to working OneNote
+      links on the published page.
+- [ ] A single `.md` can publish to multiple notebook targets.
+- [ ] Markdown authoring style guide + strict lint config for
+      source files.
+- [ ] Clean-architecture separation: MD → content model → target
+      adapter. Same core reusable for future HTML / PDF / Word
+      targets.
 
 ## Explicitly out of scope
 
-<!-- Hard "no" list. When an idea shows up in triage, match it against
-     this list before anything else — close with a one-liner citing
-     this section. Examples to consider:
-     - Graph API support (reintroduces the admin-consent problem).
-     - Non-Windows platforms (COM Interop is Windows-only by design).
-     - Rich-content OneNote features that have no Markdown equivalent
-       (ink annotations, embedded OneNote tags/checkboxes roundtrip,
-       password-protected sections, audio/video). -->
+<!-- Hard "no" list. Match new ideas against this in triage and close
+     with a one-liner citing this section. -->
 
-_To be filled in._
+- _To be confirmed during triage. Candidates the maintainer has
+  mentioned wanting **parked but not rejected** (these become `P2`
+  issues, not `wontfix`):_
+  - _Microsoft Graph / HTML variant._
+  - _Office add-in packaging._
+  - _GUI polish beyond what already exists._
+  - _Bidirectional sync (OneNote edits → Markdown)._
+  - _Static-site / PDF / Word export._
 
 ## Active milestones
 
@@ -73,9 +99,34 @@ _To be filled in._
 - ✅ Repo foundations (GitVersion, `.editorconfig`, `CONTRIBUTING.md`,
   `CHANGELOG.md`).
 
-### M2 — <fill in the next milestone>
+### M2 — Authored Markdown as first-class source
 
-_To be filled in._
+Make the importer good enough to be driven from a real Markdown
+knowledge base, not just hand-curated single files.
+
+- [ ] Front-matter schema (title, tags, notebook, section, id).
+- [ ] Folder-tree mapping convention documented.
+- [ ] Multi-file tree publish via CLI (walk, parse, publish).
+- [ ] Strict lint config for source `.md`.
+- [ ] Author-facing style guide.
+
+### M3 — Idempotent sync + link graph
+
+Stop treating each import as a greenfield page creation.
+
+- [ ] Stable MD-file ↔ OneNote-page-id mapping.
+- [ ] Re-imports update rather than duplicate.
+- [ ] Inter-note `[x](./y.md)` links resolve to OneNote page links.
+- [ ] Single MD publishable to multiple notebook targets.
+
+### M4 — Clean-architecture extraction (enables everything else)
+
+Prepare the core for future HTML / Graph / static-site / PDF targets
+without further rewrites.
+
+- [ ] MD → target-agnostic content model.
+- [ ] COM-OneNote target as one adapter, isolable and testable
+      without touching OneNote.
 
 ## Open questions
 
