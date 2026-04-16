@@ -226,4 +226,45 @@ public class MarkdownToOneNoteXmlConverterTests
     }
 
     #endregion
+
+    #region Code Block Tests
+
+    [Fact]
+    public void Convert_FencedCodeBlock_CreatesTableWithConsolas()
+    {
+        var markdown = "```\nvar x = 1;\nvar y = 2;\n```";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var tables = doc.Descendants(OneNs + "Table");
+        tables.Should().NotBeEmpty();
+        tables.First().Attribute("bordersVisible")!.Value.Should().Be("true");
+
+        var text = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        text.Should().Contain(t => t.Contains("Consolas") && t.Contains("var x = 1;"));
+    }
+
+    [Fact]
+    public void Convert_FencedCodeBlockWithLanguage_CreatesTable()
+    {
+        var markdown = "```csharp\nConsole.WriteLine(\"hi\");\n```";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var tables = doc.Descendants(OneNs + "Table");
+        tables.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Convert_FencedCodeBlock_PreservesMultipleLines()
+    {
+        var markdown = "```\nline1\nline2\nline3\n```";
+        var result = _converter.Convert(markdown, pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var text = doc.Descendants(OneNs + "T").Select(t => t.Value);
+        text.Should().Contain(t => t.Contains("line1") && t.Contains("line2") && t.Contains("line3"));
+    }
+
+    #endregion
 }

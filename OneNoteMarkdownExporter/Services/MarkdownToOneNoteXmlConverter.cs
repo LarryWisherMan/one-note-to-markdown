@@ -193,6 +193,7 @@ public class MarkdownToOneNoteXmlConverter
             {
                 HeadingBlock heading => CreateHeadingOe(heading),
                 ParagraphBlock paragraph => CreateParagraphOe(paragraph),
+                FencedCodeBlock codeBlock => CreateCodeBlockElement(codeBlock),
                 // Fall back to plain text for unrecognized block types
                 _ => CreatePlainTextOe(block)
             };
@@ -229,6 +230,41 @@ public class MarkdownToOneNoteXmlConverter
         return new XElement(OneNs + "OE",
             new XElement(OneNs + "T",
                 new XCData(html)));
+    }
+
+    /// <summary>
+    /// Creates a bordered single-cell table for a fenced code block, using Consolas font.
+    /// </summary>
+    private XElement CreateCodeBlockElement(FencedCodeBlock codeBlock)
+    {
+        var lines = new List<string>();
+        foreach (var line in codeBlock.Lines)
+        {
+            var text = line.ToString();
+            if (text != null)
+                lines.Add(System.Net.WebUtility.HtmlEncode(text));
+        }
+
+        var codeHtml = $"<span style='font-family:Consolas;font-size:9pt'>{string.Join("<br/>", lines)}</span>";
+
+        return new XElement(OneNs + "Table",
+            new XAttribute("bordersVisible", "true"),
+            new XElement(OneNs + "Columns",
+                new XElement(OneNs + "Column",
+                    new XAttribute("index", "0"),
+                    new XAttribute("width", "600")
+                )
+            ),
+            new XElement(OneNs + "Row",
+                new XElement(OneNs + "Cell",
+                    new XElement(OneNs + "OEChildren",
+                        new XElement(OneNs + "OE",
+                            new XElement(OneNs + "T", new XCData(codeHtml))
+                        )
+                    )
+                )
+            )
+        );
     }
 
     /// <summary>
