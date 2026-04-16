@@ -107,6 +107,49 @@ nesting is stack-based: a heading of level N pops any headings of level
   patch-increment rule that will conflict with GitVersion once CI is
   re-enabled. See `CONTRIBUTING.md` for the reconciliation note.
 
+## Tree publish (folder-tree → OneNote)
+
+In addition to `--import` (single file / list), the CLI can walk an entire
+Markdown source tree and publish every file that opts in:
+
+```powershell
+# Walk ./notes, publish each .md that has an `onenote:` front-matter key.
+OneNoteMarkdownExporter.exe --publish ./notes
+
+# Bulk mode: publish every .md under ./notes into "Work Notes".
+OneNoteMarkdownExporter.exe --publish ./notes --notebook "Work Notes"
+
+# Preview what would publish — no OneNote calls.
+OneNoteMarkdownExporter.exe --publish ./notes --dry-run --verbose
+```
+
+The resolution rule (folder path + front-matter + CLI flag → target notebook /
+section / page) is documented in detail in
+`docs/superpowers/specs/2026-04-16-folder-tree-mapping-design.md`. Short version:
+
+- **Folders** express hierarchy. `Work Notes/Architecture/overview.md` publishes to
+  notebook `Work Notes`, section `Architecture`, page `overview`.
+- **Dots in filename stems** also count as hierarchy. `backend.api.auth.md`
+  resolves the same as `backend/api/auth.md`.
+- **Front-matter** overrides folder inference per-field:
+
+  ```yaml
+  ---
+  title: "My Page"
+  onenote:
+    notebook: "Work Notes"
+    section: "Architecture"
+    section_groups: ["Backend", "API"]
+  ---
+  ```
+
+- **`onenote: true`** opts a file in when you want folder inference to do all the
+  work. **`onenote: false`** explicitly excludes a file when using `--notebook`
+  bulk mode.
+
+Files without an `onenote:` key and without a `--notebook` flag are silently
+skipped.
+
 ## Reference material
 
 `docs/reference-page/` contains the goldens we tune the converter against:
