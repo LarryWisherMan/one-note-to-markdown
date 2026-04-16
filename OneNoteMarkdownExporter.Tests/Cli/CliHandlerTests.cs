@@ -363,4 +363,32 @@ public class CliHandlerTests
     }
 
     #endregion
+
+    #region Import CLI Flag Tests
+
+    [Fact]
+    public void ShouldRunCli_WithImportFlag_ReturnsTrue()
+    {
+        var args = new[] { "--import", "Notebook/Section" };
+        var result = CliHandler.ShouldRunCli(args);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunCli_WithFileFlag_ReturnsTrue()
+    {
+        var args = new[] { "--file", "notes.md" };
+        var result = CliHandler.ShouldRunCli(args);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunCli_WithNoCollapseFlag_ReturnsTrue()
+    {
+        var args = new[] { "--no-collapse" };
+        var result = CliHandler.ShouldRunCli(args);
+        result.Should().BeTrue();
+    }
+
+    #endregion
 }

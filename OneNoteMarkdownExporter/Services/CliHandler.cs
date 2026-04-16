@@ -41,6 +41,7 @@ namespace OneNoteMarkdownExporter.Services
                 "--all", "--notebook", "--section", "--page", "--output", "-o",
                 "--overwrite", "--no-lint", "--lint-config",
                 "--list", "--dry-run", "--verbose", "-v", "--quiet", "-q",
+                "--import", "--file", "--no-collapse",
                 "--help", "-h", "-?", "--version"
             };
 
@@ -114,6 +115,21 @@ namespace OneNoteMarkdownExporter.Services
                 aliases: new[] { "--quiet", "-q" },
                 "Show only errors");
 
+            var importOption = new Option<string?>(
+                "--import",
+                "Import Markdown file(s) to OneNote. Specify target as 'Notebook/Section'.");
+
+            var fileOption = new Option<string[]?>(
+                "--file",
+                "Markdown file(s) to import")
+            {
+                AllowMultipleArgumentsPerToken = true
+            };
+
+            var noCollapseOption = new Option<bool>(
+                "--no-collapse",
+                "Disable collapsible heading nesting for import");
+
             // Add options to command
             rootCommand.AddOption(allOption);
             rootCommand.AddOption(notebookOption);
@@ -127,10 +143,30 @@ namespace OneNoteMarkdownExporter.Services
             rootCommand.AddOption(dryRunOption);
             rootCommand.AddOption(verboseOption);
             rootCommand.AddOption(quietOption);
+            rootCommand.AddOption(importOption);
+            rootCommand.AddOption(fileOption);
+            rootCommand.AddOption(noCollapseOption);
 
             rootCommand.SetHandler(async (context) =>
             {
                 var result = context.ParseResult;
+
+                var importTarget = result.GetValueForOption(importOption);
+                var importFiles = result.GetValueForOption(fileOption);
+
+                if (!string.IsNullOrEmpty(importTarget))
+                {
+                    var exitCode = await ExecuteImportAsync(
+                        importTarget,
+                        importFiles,
+                        !result.GetValueForOption(noCollapseOption),
+                        result.GetValueForOption(dryRunOption),
+                        result.GetValueForOption(verboseOption),
+                        result.GetValueForOption(quietOption),
+                        context.GetCancellationToken());
+                    context.ExitCode = exitCode;
+                    return;
+                }
 
                 var options = new ExportOptions
                 {
@@ -148,9 +184,8 @@ namespace OneNoteMarkdownExporter.Services
                 };
 
                 var listMode = result.GetValueForOption(listOption);
-
-                var exitCode = await ExecuteAsync(options, listMode, context.GetCancellationToken());
-                context.ExitCode = exitCode;
+                var exitCode2 = await ExecuteAsync(options, listMode, context.GetCancellationToken());
+                context.ExitCode = exitCode2;
             });
 
             return rootCommand;
@@ -237,6 +272,119 @@ namespace OneNoteMarkdownExporter.Services
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
                 if (options.Verbose)
+                {
+                    Console.Error.WriteLine(ex.StackTrace);
+                }
+                return 1;
+            }
+        }
+
+        private static async Task<int> ExecuteImportAsync(
+            string importTarget,
+            string[]? files,
+            bool collapsible,
+            bool dryRun,
+            bool verbose,
+            bool quiet,
+            CancellationToken cancellationToken)
+        {
+            var parts = importTarget.Split('/');
+            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
+            {
+                Console.Error.WriteLine("Error: --import must be in format 'Notebook/Section'.");
+                return 1;
+            }
+
+            if (files == null || files.Length == 0)
+            {
+                Console.Error.WriteLine("Error: --file is required with --import.");
+                return 1;
+            }
+
+            var resolvedFiles = new List<string>();
+            foreach (var file in files)
+            {
+                var fullPath = Path.GetFullPath(file);
+                if (!File.Exists(fullPath))
+                {
+                    Console.Error.WriteLine($"Error: File not found: {file}");
+                    return 1;
+                }
+                if (!fullPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Error.WriteLine($"Warning: Skipping non-Markdown file: {file}");
+                    continue;
+                }
+                resolvedFiles.Add(fullPath);
+            }
+
+            if (resolvedFiles.Count == 0)
+            {
+                Console.Error.WriteLine("Error: No valid Markdown files found.");
+                return 1;
+            }
+
+            var options = new ImportOptions
+            {
+                NotebookName = parts[0].Trim(),
+                SectionName = parts[1].Trim(),
+                FilePaths = resolvedFiles,
+                Collapsible = collapsible,
+                DryRun = dryRun,
+                Verbose = verbose,
+                Quiet = quiet
+            };
+
+            var progress = new Progress<string>(message =>
+            {
+                if (!quiet || message.Contains("Error") || message.Contains("failed"))
+                {
+                    Console.WriteLine(message);
+                }
+            });
+
+            try
+            {
+                if (!quiet)
+                {
+                    Console.WriteLine("OneNote Markdown Importer");
+                    Console.WriteLine("========================");
+                    Console.WriteLine($"Target: {options.NotebookName}/{options.SectionName}");
+                    Console.WriteLine($"Files: {resolvedFiles.Count}");
+                    Console.WriteLine($"Collapsible: {(collapsible ? "Yes" : "No")}");
+                    if (dryRun) Console.WriteLine("Mode: DRY RUN");
+                    Console.WriteLine();
+                }
+
+                var oneNoteService = new OneNoteService();
+                var converter = new MarkdownToOneNoteXmlConverter();
+                var importService = new ImportService(oneNoteService, converter);
+
+                var result = await importService.ImportAsync(options, progress, cancellationToken);
+
+                if (!quiet && !dryRun)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Import Summary:");
+                    Console.WriteLine($"  Pages imported: {result.ImportedPages}");
+                    if (result.FailedPages > 0)
+                    {
+                        Console.WriteLine($"  Pages failed: {result.FailedPages}");
+                    }
+                }
+
+                return result.Success ? 0 : 1;
+            }
+            catch (System.Runtime.InteropServices.COMException ex)
+            {
+                Console.Error.WriteLine($"OneNote COM error: {ex.Message}");
+                Console.Error.WriteLine("Make sure OneNote is installed and not running in a protected mode.");
+                return 2;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                if (verbose)
                 {
                     Console.Error.WriteLine(ex.StackTrace);
                 }
