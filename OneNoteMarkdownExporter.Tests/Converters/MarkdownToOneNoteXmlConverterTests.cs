@@ -1,3 +1,4 @@
+using System.IO;
 using System.Xml.Linq;
 using FluentAssertions;
 using OneNoteMarkdownExporter.Services;
@@ -416,6 +417,75 @@ public class MarkdownToOneNoteXmlConverterTests
         var h2Oe = h2Oes.First();
         h2Oe.Elements(OneNs + "OEChildren").Should().BeEmpty(
             "collapsible is disabled, so content should be flat siblings");
+    }
+
+    #endregion
+
+    #region Image Tests
+
+    [Fact]
+    public void Convert_LocalImage_EmbedsBase64Data()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "onenote_test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var pngBytes = new byte[]
+            {
+                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+                0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+                0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
+                0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
+                0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+                0x44, 0xAE, 0x42, 0x60, 0x82
+            };
+            File.WriteAllBytes(Path.Combine(tempDir, "test.png"), pngBytes);
+
+            var markdown = "![Alt text](test.png)";
+            var result = _converter.Convert(markdown, pageTitle: "Test", basePath: tempDir);
+            var doc = ParseResult(result);
+
+            var images = doc.Descendants(OneNs + "Image");
+            images.Should().NotBeEmpty();
+            var data = doc.Descendants(OneNs + "Data");
+            data.Should().NotBeEmpty();
+            data.First().Value.Should().NotBeNullOrEmpty();
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void Convert_MissingImage_RendersPlaceholder()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "onenote_test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var markdown = "![Alt](missing.png)";
+            var result = _converter.Convert(markdown, pageTitle: "Test", basePath: tempDir);
+
+            result.Should().Contain("[Image not found: missing.png]");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void Convert_ImageWithNoBasePath_RendersFallbackText()
+    {
+        var markdown = "![My diagram](assets/diagram.png)";
+        var result = _converter.Convert(markdown, pageTitle: "Test", basePath: null);
+
+        result.Should().Contain("Image:");
+        result.Should().Contain("assets/diagram.png");
     }
 
     #endregion

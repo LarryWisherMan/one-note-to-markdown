@@ -466,8 +466,10 @@ public class MarkdownToOneNoteXmlConverter
 
     /// <summary>
     /// Renders inline content as HTML suitable for OneNote CDATA sections.
+    /// Instance method so image rendering can access <see cref="_basePath"/> and
+    /// <see cref="_pendingImageElements"/>.
     /// </summary>
-    private static string RenderInlineHtml(ContainerInline? container)
+    private string RenderInlineHtml(ContainerInline? container)
     {
         if (container == null) return "";
 
@@ -481,8 +483,9 @@ public class MarkdownToOneNoteXmlConverter
 
     /// <summary>
     /// Renders a single inline element to HTML.
+    /// Instance method so image rendering can access instance state.
     /// </summary>
-    private static string RenderSingleInline(Inline inline)
+    private string RenderSingleInline(Inline inline)
     {
         return inline switch
         {
@@ -501,7 +504,7 @@ public class MarkdownToOneNoteXmlConverter
     /// <summary>
     /// Renders emphasis (bold/italic) inline.
     /// </summary>
-    private static string RenderEmphasis(EmphasisInline emphasis)
+    private string RenderEmphasis(EmphasisInline emphasis)
     {
         var inner = new StringBuilder();
         foreach (var child in emphasis)
@@ -531,14 +534,13 @@ public class MarkdownToOneNoteXmlConverter
     }
 
     /// <summary>
-    /// Renders a link inline. Images produce placeholder text for now.
+    /// Renders a link inline. For image links, delegates to <see cref="RenderImage"/>.
     /// </summary>
-    private static string RenderLink(LinkInline link)
+    private string RenderLink(LinkInline link)
     {
         if (link.IsImage)
         {
-            var alt = GetInlineText(link) ?? "image";
-            return $"[Image: {System.Net.WebUtility.HtmlEncode(alt)}]";
+            return RenderImage(link);
         }
 
         var text = new StringBuilder();
@@ -549,6 +551,43 @@ public class MarkdownToOneNoteXmlConverter
 
         var url = link.Url ?? "";
         return $"<a href=\"{System.Net.WebUtility.HtmlEncode(url)}\">{text}</a>";
+    }
+
+    /// <summary>
+    /// Renders an image inline.
+    /// - No base path or http/https URL: returns informational placeholder text.
+    /// - File not found: returns "[Image not found: {url}]".
+    /// - File found: reads bytes, base64-encodes, enqueues a one:Image element in
+    ///   <see cref="_pendingImageElements"/> and returns an empty string.
+    /// </summary>
+    private string RenderImage(LinkInline link)
+    {
+        var url = link.Url ?? "";
+        var altText = GetInlineText(link) ?? "image";
+
+        // No base path or remote URL — return informational placeholder
+        if (_basePath == null ||
+            url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"[Image: {System.Net.WebUtility.HtmlEncode(altText)} ({System.Net.WebUtility.HtmlEncode(url)})]";
+        }
+
+        var fullPath = Path.Combine(_basePath, url);
+        if (!File.Exists(fullPath))
+        {
+            return $"[Image not found: {System.Net.WebUtility.HtmlEncode(url)}]";
+        }
+
+        var bytes = File.ReadAllBytes(fullPath);
+        var base64 = System.Convert.ToBase64String(bytes);
+
+        var imageElement = new XElement(OneNs + "Image",
+            new XElement(OneNs + "Data", base64)
+        );
+
+        _pendingImageElements?.Add(imageElement);
+        return "";  // image element added separately
     }
 
     /// <summary>
