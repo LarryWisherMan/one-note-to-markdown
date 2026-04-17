@@ -119,6 +119,37 @@ public class FrontMatterParser
         }
     }
 
+    /// <summary>
+    /// Returns the file content with the front-matter block stripped.
+    /// If no front-matter is present, returns the original content unchanged.
+    /// </summary>
+    public static string StripFrontMatter(string content)
+    {
+        if (!content.StartsWith("---"))
+        {
+            return content;
+        }
+
+        using var reader = new StringReader(content);
+        string? first = reader.ReadLine();
+        if (first?.TrimEnd() != "---")
+        {
+            return content;
+        }
+
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (line.TrimEnd() == "---")
+            {
+                // Return everything after the closing delimiter.
+                return reader.ReadToEnd().TrimStart('\r', '\n');
+            }
+        }
+
+        return content; // no closing delimiter — return as-is
+    }
+
     private static string? ExtractYamlBlock(string content)
     {
         if (!content.StartsWith("---"))

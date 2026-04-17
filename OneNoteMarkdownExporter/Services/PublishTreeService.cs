@@ -113,7 +113,8 @@ public class PublishTreeService
                 continue;
             }
 
-            resolved.Add(new ResolvedEntry(fileRel, outcome.Target, content, fullPath, outcome.Diagnostic));
+            var markdown = FrontMatterParser.StripFrontMatter(content);
+            resolved.Add(new ResolvedEntry(fileRel, outcome.Target, markdown, fullPath, outcome.Diagnostic));
         }
 
         // Pass 2 — detect collisions by grouping on target key.
