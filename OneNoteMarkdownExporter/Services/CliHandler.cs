@@ -525,6 +525,13 @@ namespace OneNoteMarkdownExporter.Services
                     if (result.FailedPages > 0)
                     {
                         Console.WriteLine($"  Pages failed: {result.FailedPages}");
+                        // Progress<T> is async; a Report("Error: …") call right before an
+                        // early-return can lose the race against the summary. Dump the
+                        // error list here so the user always sees why it failed.
+                        foreach (var error in result.Errors)
+                        {
+                            Console.Error.WriteLine($"  {error}");
+                        }
                     }
                 }
 
