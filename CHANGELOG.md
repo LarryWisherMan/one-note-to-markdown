@@ -73,6 +73,9 @@ it.
 - `--import --create-missing` creates a missing target section (and
   any section groups between it and the notebook) before importing
   (opt-in).
+- `scripts/smoke-samples.ps1` — builds + publishes the samples corpus
+  into a throwaway OneNote notebook for visual verification. Supports
+  `-DryRun`, `-SkipBuild`, `-KeepScratch`.
 
 ### Changed
 
@@ -88,6 +91,10 @@ it.
 - Imported and published pages now suppress OneNote spell-check via
   `lang="yo"` on `<one:Page>` and `<one:Title>`, so technical content
   renders without red squiggles.
+- Reorganized `samples/` from a flat set of feature-demo files into a
+  realistic docs-repo layout (`getting-started/`, `reference/`,
+  `examples/`), with `{{Notebook}}`-templated front-matter so the
+  corpus is target-agnostic.
 
 ### Removed
 
