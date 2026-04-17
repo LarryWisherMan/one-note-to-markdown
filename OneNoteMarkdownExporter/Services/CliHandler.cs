@@ -41,7 +41,7 @@ namespace OneNoteMarkdownExporter.Services
                 "--all", "--notebook", "--section", "--page", "--output", "-o",
                 "--overwrite", "--no-lint", "--lint-config",
                 "--list", "--dry-run", "--verbose", "-v", "--quiet", "-q",
-                "--import", "--file", "--no-collapse",
+                "--import", "--file", "--no-collapse", "--publish",
                 "--help", "-h", "-?", "--version"
             };
 
@@ -130,6 +130,10 @@ namespace OneNoteMarkdownExporter.Services
                 "--no-collapse",
                 "Disable collapsible heading nesting for import");
 
+            var publishOption = new Option<string?>(
+                "--publish",
+                "Walk a Markdown source tree and publish every opt-in file to OneNote.");
+
             // Add options to command
             rootCommand.AddOption(allOption);
             rootCommand.AddOption(notebookOption);
@@ -146,10 +150,28 @@ namespace OneNoteMarkdownExporter.Services
             rootCommand.AddOption(importOption);
             rootCommand.AddOption(fileOption);
             rootCommand.AddOption(noCollapseOption);
+            rootCommand.AddOption(publishOption);
 
             rootCommand.SetHandler(async (context) =>
             {
                 var result = context.ParseResult;
+
+                var publishSource = result.GetValueForOption(publishOption);
+                if (!string.IsNullOrEmpty(publishSource))
+                {
+                    var notebooks = result.GetValueForOption(notebookOption);
+                    var cliNotebook = notebooks is { Length: > 0 } ? notebooks[0] : null;
+
+                    var exitCode = await ExecutePublishTreeAsync(
+                        publishSource,
+                        cliNotebook,
+                        collapsible: !result.GetValueForOption(noCollapseOption),
+                        dryRun: result.GetValueForOption(dryRunOption),
+                        verbose: result.GetValueForOption(verboseOption),
+                        quiet: result.GetValueForOption(quietOption));
+                    context.ExitCode = exitCode;
+                    return;
+                }
 
                 var importTarget = result.GetValueForOption(importOption);
                 var importFiles = result.GetValueForOption(fileOption);
@@ -272,6 +294,94 @@ namespace OneNoteMarkdownExporter.Services
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
                 if (options.Verbose)
+                {
+                    Console.Error.WriteLine(ex.StackTrace);
+                }
+                return 1;
+            }
+        }
+
+        private static async Task<int> ExecutePublishTreeAsync(
+            string sourceDir,
+            string? cliNotebook,
+            bool collapsible,
+            bool dryRun,
+            bool verbose,
+            bool quiet)
+        {
+            if (!Directory.Exists(sourceDir))
+            {
+                Console.Error.WriteLine($"Error: source directory not found: {sourceDir}");
+                return 1;
+            }
+
+            var options = new PublishTreeOptions
+            {
+                SourceRoot = Path.GetFullPath(sourceDir),
+                CliNotebook = cliNotebook,
+                Collapsible = collapsible,
+                DryRun = dryRun,
+                Verbose = verbose,
+                Quiet = quiet,
+            };
+
+            if (!quiet)
+            {
+                Console.WriteLine("OneNote Markdown Tree Publisher");
+                Console.WriteLine("===============================");
+                Console.WriteLine($"Source: {options.SourceRoot}");
+                if (cliNotebook is not null) Console.WriteLine($"Notebook (CLI): {cliNotebook}");
+                if (dryRun) Console.WriteLine("Mode: DRY RUN");
+                Console.WriteLine();
+            }
+
+            try
+            {
+                var oneNoteService = new OneNoteService();
+                var converter = new MarkdownToOneNoteXmlConverter();
+                var service = new PublishTreeService(
+                    new MarkdownTreeWalker(),
+                    new FrontMatterParser(),
+                    new OneNoteTargetResolver(),
+                    new OneNoteTreePublisher(oneNoteService, converter));
+
+                // Use a direct IProgress implementation instead of Progress<T>,
+                // which marshals via SynchronizationContext and gets swallowed
+                // when the WPF app runs in CLI mode.
+                IProgress<string>? progress = quiet ? null : new DirectProgress(Console.WriteLine);
+
+                var report = await service.PublishAsync(options, progress);
+
+                foreach (var diag in report.Diagnostics)
+                {
+                    var shouldShow =
+                        diag.Severity == DiagnosticSeverity.Error ||
+                        diag.Severity == DiagnosticSeverity.Warning ||
+                        (diag.Severity == DiagnosticSeverity.Info && verbose);
+                    if (!shouldShow) continue;
+                    var prefix = diag.Severity switch
+                    {
+                        DiagnosticSeverity.Error => "error",
+                        DiagnosticSeverity.Warning => "warn",
+                        _ => "info",
+                    };
+                    Console.WriteLine($"  [{prefix}] {diag.Message}");
+                }
+
+                Console.WriteLine();
+                Console.WriteLine(report.RenderSummary());
+                return report.Success ? 0 : 1;
+            }
+            catch (System.Runtime.InteropServices.COMException ex)
+            {
+                Console.Error.WriteLine($"OneNote COM error: {ex.Message}");
+                Console.Error.WriteLine("Make sure OneNote is installed and not running in a protected mode.");
+                return 2;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                if (verbose)
                 {
                     Console.Error.WriteLine(ex.StackTrace);
                 }
@@ -457,5 +567,17 @@ namespace OneNoteMarkdownExporter.Services
                 PrintItem(child, indent + "  ", verbose);
             }
         }
+    }
+
+    /// <summary>
+    /// IProgress that calls the handler directly on the current thread,
+    /// avoiding the SynchronizationContext marshaling of <see cref="Progress{T}"/>
+    /// which gets swallowed in WPF CLI mode.
+    /// </summary>
+    internal sealed class DirectProgress : IProgress<string>
+    {
+        private readonly Action<string> _handler;
+        public DirectProgress(Action<string> handler) => _handler = handler;
+        public void Report(string value) => _handler(value);
     }
 }
