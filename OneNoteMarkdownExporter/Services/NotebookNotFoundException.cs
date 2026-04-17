@@ -6,7 +6,7 @@ namespace OneNoteMarkdownExporter.Services;
 /// Thrown when a resolved publish target references a notebook that does not
 /// exist in OneNote. Notebook-level auto-create is tracked by issue #19.
 /// </summary>
-public class NotebookNotFoundException : Exception
+public sealed class NotebookNotFoundException : Exception
 {
     public NotebookNotFoundException(string notebookName)
         : base(
