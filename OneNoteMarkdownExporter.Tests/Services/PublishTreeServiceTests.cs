@@ -126,3 +126,13 @@ public class PublishTreeServiceTests : IDisposable
         }
     }
 }
+
+public class PublishTreeOptionsTests
+{
+    [Fact]
+    public void CreateMissing_DefaultsToTrue()
+    {
+        var options = new PublishTreeOptions();
+        options.CreateMissing.Should().BeTrue();
+    }
+}

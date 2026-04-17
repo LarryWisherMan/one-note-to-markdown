@@ -15,4 +15,11 @@ public class PublishTreeOptions
     public bool DryRun { get; set; } = false;
     public bool Verbose { get; set; } = false;
     public bool Quiet { get; set; } = false;
+
+    /// <summary>
+    /// When true, auto-create missing section groups and the leaf section
+    /// before publishing each page. Default true — <c>--publish</c> is bulk
+    /// and expects the tree to "just work" without manual pre-creation.
+    /// </summary>
+    public bool CreateMissing { get; set; } = true;
 }
