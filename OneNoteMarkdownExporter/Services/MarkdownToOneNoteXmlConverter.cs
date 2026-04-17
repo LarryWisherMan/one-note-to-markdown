@@ -82,7 +82,8 @@ public class MarkdownToOneNoteXmlConverter
         // Build the page XML with explicit one: prefix (required by OneNote COM API)
         var page = new XElement(OneNs + "Page",
             new XAttribute(XNamespace.Xmlns + "one", OneNs.NamespaceName),
-            new XAttribute("name", resolvedTitle));
+            new XAttribute("name", resolvedTitle),
+            new XAttribute("lang", "yo"));
 
         // QuickStyleDefs map heading levels to OneNote's native style rendering.
         // Must come before Title per OneNote's schema ordering.

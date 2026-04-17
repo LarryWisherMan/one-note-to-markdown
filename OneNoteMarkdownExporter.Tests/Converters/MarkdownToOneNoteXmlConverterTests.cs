@@ -911,4 +911,17 @@ var x = 42;
     }
 
     #endregion
+
+    #region Spell-check suppression
+
+    [Fact]
+    public void Convert_EmitsLangYoOnPage_ToSuppressSpellCheck()
+    {
+        var result = _converter.Convert("body", pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        doc.Root!.Attribute("lang")?.Value.Should().Be("yo");
+    }
+
+    #endregion
 }
