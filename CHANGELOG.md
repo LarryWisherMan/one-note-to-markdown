@@ -67,6 +67,12 @@ it.
 - `FindSectionIdByPath(notebook, sectionGroups[], section)` on
   `OneNoteService` for nested-section-group navigation.
 - YamlDotNet dependency for parsing the minimum front-matter subset.
+- `--publish` auto-creates missing section groups and sections by
+  default; opt out with `--no-create-missing`. Notebook-level
+  auto-create is not yet supported (tracked by #19).
+- `--import --create-missing` creates a missing target section (and
+  any section groups between it and the notebook) before importing
+  (opt-in).
 
 ### Changed
 
