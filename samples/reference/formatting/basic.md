@@ -1,3 +1,9 @@
+---
+title: "Basic Formatting"
+onenote:
+  notebook: "{{Notebook}}"
+---
+
 # Basic Formatting Test
 
 This page tests inline formatting.

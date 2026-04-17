@@ -1,3 +1,9 @@
+---
+title: "Lists and Tables"
+onenote:
+  notebook: "{{Notebook}}"
+---
+
 # Lists and Tables
 
 ## Bullet Lists
