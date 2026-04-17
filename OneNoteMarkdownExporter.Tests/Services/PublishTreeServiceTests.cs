@@ -37,7 +37,7 @@ public class PublishTreeServiceTests : IDisposable
         new(new MarkdownTreeWalker(), new FrontMatterParser(), new OneNoteTargetResolver(), publisher);
 
     [Fact]
-    public async Task PublishAsync_DryRun_DoesNotCallPublisher()
+    public async Task PublishAsync_DryRun_CallsPublisherWithDryRunFlag()
     {
         Write("a.md", "---\nonenote:\n  notebook: NB\n  section: S\n---\nBody.");
         var publisher = new FakeOneNotePublisher();
@@ -49,7 +49,9 @@ public class PublishTreeServiceTests : IDisposable
             DryRun = true,
         });
 
-        publisher.CreatedPages.Should().BeEmpty();
+        publisher.CreatedPages.Should().HaveCount(1);
+        publisher.CreatedPages[0].DryRun.Should().BeTrue();
+        publisher.CreatedPages[0].CreateMissing.Should().BeTrue();
         report.Published.Should().Be(1);
     }
 

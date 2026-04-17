@@ -143,7 +143,8 @@ public class PublishTreeService
             publishable.Add(list[0]);
         }
 
-        // Pass 3 — publish (or dry-run).
+        // Pass 3 — publish (dry-run goes through the publisher too, so the
+        // hierarchy walk and "Would create …" progress still happen).
         foreach (var entry in publishable)
         {
             if (entry.PendingDiagnostic?.Severity == DiagnosticSeverity.Warning)
@@ -153,9 +154,7 @@ public class PublishTreeService
 
             if (options.DryRun)
             {
-                report.RecordPublished(entry.FileRel);
                 progress?.Report($"  [dry-run] {entry.FileRel} → {TargetKey(entry.Target)}  (title: {entry.Target.PageTitle})");
-                continue;
             }
 
             try
@@ -168,8 +167,9 @@ public class PublishTreeService
                     entry.Markdown,
                     entry.FullPath,
                     options.Collapsible,
-                    createMissing: false,
-                    dryRun: false);
+                    createMissing: options.CreateMissing,
+                    dryRun: options.DryRun,
+                    progress: progress);
                 report.RecordPublished(entry.FileRel);
             }
             catch (Exception ex)
