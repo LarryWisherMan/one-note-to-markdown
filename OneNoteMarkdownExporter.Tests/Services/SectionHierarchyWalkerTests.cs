@@ -90,4 +90,21 @@ public class SectionHierarchyWalkerTests
         plan.CreationSteps[2].Kind.Should().Be(CreationKind.Section);
         plan.CreationSteps[2].Name.Should().Be("auth-spec");
     }
+
+    [Fact]
+    public void Plan_MissingNotebook_ThrowsNotebookNotFoundException()
+    {
+        var xml = LoadFixture("missing-notebook.xml");
+
+        var act = () => SectionHierarchyWalker.Plan(
+            xml,
+            notebookName: "Work Notes",
+            sectionGroups: new[] { "Backend" },
+            sectionName: "auth-spec",
+            createMissing: true);
+
+        act.Should()
+            .Throw<NotebookNotFoundException>()
+            .Which.NotebookName.Should().Be("Work Notes");
+    }
 }
