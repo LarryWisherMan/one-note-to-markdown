@@ -22,7 +22,10 @@ public interface IOneNotePublisher
         string pageTitle,
         string markdownContent,
         string sourceFileFullPath,
-        bool collapsible);
+        bool collapsible,
+        bool createMissing,
+        bool dryRun,
+        IProgress<string>? progress = null);
 }
 
 public class PublishTreeService
@@ -164,7 +167,9 @@ public class PublishTreeService
                     entry.Target.PageTitle,
                     entry.Markdown,
                     entry.FullPath,
-                    options.Collapsible);
+                    options.Collapsible,
+                    createMissing: false,
+                    dryRun: false);
                 report.RecordPublished(entry.FileRel);
             }
             catch (Exception ex)

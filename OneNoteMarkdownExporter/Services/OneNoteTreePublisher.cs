@@ -28,13 +28,28 @@ public class OneNoteTreePublisher : IOneNotePublisher
         string pageTitle,
         string markdownContent,
         string sourceFileFullPath,
-        bool collapsible)
+        bool collapsible,
+        bool createMissing,
+        bool dryRun,
+        IProgress<string>? progress = null)
     {
         return Task.Run(() =>
         {
-            var sectionId = _oneNoteService.FindSectionIdByPath(notebook, sectionGroups, section)
-                ?? throw new InvalidOperationException(
-                    $"Section not found: {notebook}/{string.Join('/', sectionGroups)}/{section}".Replace("//", "/"));
+            var sectionId = _oneNoteService.EnsureSectionIdByPath(
+                notebook, sectionGroups, section,
+                createMissing: createMissing,
+                dryRun: dryRun,
+                progress: progress);
+
+            if (dryRun) return;
+
+            if (sectionId is null)
+            {
+                throw new InvalidOperationException(
+                    $"Section not found: {notebook}/{string.Join('/', sectionGroups)}/{section}. "
+                        .Replace("//", "/") +
+                    "Pass --create-missing to create it automatically.");
+            }
 
             var pageXml = _converter.Convert(
                 markdownContent,

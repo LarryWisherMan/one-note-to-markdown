@@ -105,7 +105,7 @@ public class PublishTreeServiceTests : IDisposable
 
     private class FakeOneNotePublisher : IOneNotePublisher
     {
-        public List<(string Notebook, IReadOnlyList<string> SGs, string Section, string PageTitle)> CreatedPages { get; } = new();
+        public List<(string Notebook, IReadOnlyList<string> SGs, string Section, string PageTitle, bool CreateMissing, bool DryRun)> CreatedPages { get; } = new();
         public bool FailNextCall { get; set; }
 
         public Task PublishAsync(
@@ -115,10 +115,13 @@ public class PublishTreeServiceTests : IDisposable
             string pageTitle,
             string markdownContent,
             string sourceFileFullPath,
-            bool collapsible)
+            bool collapsible,
+            bool createMissing,
+            bool dryRun,
+            IProgress<string>? progress = null)
         {
             if (FailNextCall) throw new System.InvalidOperationException("forced");
-            CreatedPages.Add((notebook, sectionGroups, section, pageTitle));
+            CreatedPages.Add((notebook, sectionGroups, section, pageTitle, createMissing, dryRun));
             return Task.CompletedTask;
         }
     }
