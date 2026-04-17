@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace OneNoteMarkdownExporter.Services;
@@ -45,9 +46,10 @@ public class OneNoteTreePublisher : IOneNotePublisher
 
             if (sectionId is null)
             {
+                var targetPath = string.Join('/',
+                    new[] { notebook }.Concat(sectionGroups).Append(section));
                 throw new InvalidOperationException(
-                    $"Section not found: {notebook}/{string.Join('/', sectionGroups)}/{section}. "
-                        .Replace("//", "/") +
+                    $"Section not found: {targetPath}. " +
                     "Pass --create-missing to create it automatically.");
             }
 
