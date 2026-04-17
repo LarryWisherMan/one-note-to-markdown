@@ -79,6 +79,9 @@ it.
   PNG) rather than a placeholder, so the smoke-test page renders an
   actual embedded image.
 - Reference fixtures moved from `Z_SampleRef/` to `docs/reference-page/`.
+- Imported and published pages now suppress OneNote spell-check via
+  `lang="yo"` on `<one:Page>` and `<one:Title>`, so technical content
+  renders without red squiggles.
 
 ### Removed
 
