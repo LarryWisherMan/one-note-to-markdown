@@ -67,4 +67,27 @@ public class SectionHierarchyWalkerTests
         plan.CreationSteps[1].Kind.Should().Be(CreationKind.Section);
         plan.CreationSteps[1].Name.Should().Be("auth-spec");
     }
+
+    [Fact]
+    public void Plan_MissingAllIntermediates_CreateMissing_AddsThreeCreationSteps()
+    {
+        var xml = LoadFixture("missing-all-intermediates.xml");
+
+        var plan = SectionHierarchyWalker.Plan(
+            xml,
+            notebookName: "Work Notes",
+            sectionGroups: new[] { "Backend", "API" },
+            sectionName: "auth-spec",
+            createMissing: true);
+
+        plan.ExistingSectionId.Should().BeNull();
+        plan.DeepestExistingAncestorId.Should().Be("{NB}{1}{B0}");
+        plan.CreationSteps.Should().HaveCount(3);
+        plan.CreationSteps[0].Kind.Should().Be(CreationKind.SectionGroup);
+        plan.CreationSteps[0].Name.Should().Be("Backend");
+        plan.CreationSteps[1].Kind.Should().Be(CreationKind.SectionGroup);
+        plan.CreationSteps[1].Name.Should().Be("API");
+        plan.CreationSteps[2].Kind.Should().Be(CreationKind.Section);
+        plan.CreationSteps[2].Name.Should().Be("auth-spec");
+    }
 }
