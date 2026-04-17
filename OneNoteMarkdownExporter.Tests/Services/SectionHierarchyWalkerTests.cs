@@ -107,4 +107,21 @@ public class SectionHierarchyWalkerTests
             .Throw<NotebookNotFoundException>()
             .Which.NotebookName.Should().Be("Work Notes");
     }
+
+    [Fact]
+    public void Plan_MissingLeafSection_CreateMissingFalse_ReturnsUnresolved()
+    {
+        var xml = LoadFixture("missing-leaf-section.xml");
+
+        var plan = SectionHierarchyWalker.Plan(
+            xml,
+            notebookName: "Work Notes",
+            sectionGroups: new[] { "Backend", "API" },
+            sectionName: "auth-spec",
+            createMissing: false);
+
+        plan.IsUnresolved.Should().BeTrue();
+        plan.ExistingSectionId.Should().BeNull();
+        plan.CreationSteps.Should().BeEmpty();
+    }
 }
