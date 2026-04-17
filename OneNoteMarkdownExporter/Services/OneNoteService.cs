@@ -326,7 +326,7 @@ namespace OneNoteMarkdownExporter.Services
 
             foreach (var step in plan.CreationSteps)
             {
-                var verb = dryRun ? "would create" : "Created";
+                var verb = dryRun ? "Would create" : "Created";
                 var kindLabel = step.Kind == CreationKind.SectionGroup
                     ? "section group"
                     : "section";
@@ -348,6 +348,9 @@ namespace OneNoteMarkdownExporter.Services
                 }
             }
 
+            // Walker contract: when creation is needed, the plan always ends
+            // with a CreationKind.Section step — so leafSectionId is non-null
+            // on return in live mode. Dry-run returns null (no IDs created).
             return leafSectionId;
         }
     }
