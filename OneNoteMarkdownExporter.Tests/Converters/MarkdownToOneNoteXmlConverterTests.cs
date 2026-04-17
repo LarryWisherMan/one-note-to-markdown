@@ -923,5 +923,16 @@ var x = 42;
         doc.Root!.Attribute("lang")?.Value.Should().Be("yo");
     }
 
+    [Fact]
+    public void Convert_EmitsLangYoOnTitle_ToSuppressSpellCheck()
+    {
+        var result = _converter.Convert("body", pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var title = doc.Root!.Element(OneNs + "Title");
+        title.Should().NotBeNull();
+        title!.Attribute("lang")?.Value.Should().Be("yo");
+    }
+
     #endregion
 }

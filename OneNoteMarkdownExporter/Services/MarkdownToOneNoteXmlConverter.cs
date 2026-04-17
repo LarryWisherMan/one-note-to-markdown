@@ -94,6 +94,7 @@ public class MarkdownToOneNoteXmlConverter
 
         page.Add(new XElement(OneNs + "Title",
                 new XAttribute("quickStyleIndex", QuickStylePageTitle),
+                new XAttribute("lang", "yo"),
                 new XElement(OneNs + "OE",
                     new XElement(OneNs + "T",
                         new XCData(resolvedTitle)))));
