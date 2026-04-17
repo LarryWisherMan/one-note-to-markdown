@@ -2,6 +2,7 @@
 title: "Installation"
 onenote:
   notebook: "{{Notebook}}"
+  section: "getting-started"
 ---
 
 # Installation

@@ -2,6 +2,7 @@
 title: "Getting Started Overview"
 onenote:
   notebook: "{{Notebook}}"
+  section: "getting-started"
 ---
 
 # Getting Started

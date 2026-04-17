@@ -2,6 +2,7 @@
 title: "Page with Image"
 onenote:
   notebook: "{{Notebook}}"
+  section: "examples"
 ---
 
 # Page With Image
