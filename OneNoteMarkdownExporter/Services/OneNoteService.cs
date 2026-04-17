@@ -252,5 +252,39 @@ namespace OneNoteMarkdownExporter.Services
             }
             return null;
         }
+
+        /// <summary>
+        /// Finds a section by walking the explicit path
+        /// <c>notebook → sectionGroups[0] → … → sectionGroups[n-1] → section</c>.
+        /// Case-insensitive at each step. Returns null if any segment is missing.
+        /// </summary>
+        public string? FindSectionIdByPath(
+            string notebookName,
+            IReadOnlyList<string> sectionGroups,
+            string sectionName)
+        {
+            _oneNoteApp.GetHierarchy(null, HierarchyScope.hsSections, out string xml);
+            var doc = XDocument.Parse(xml);
+            if (doc.Root == null) return null;
+            var ns = doc.Root.Name.Namespace;
+
+            XElement? cursor = doc.Descendants(ns + "Notebook")
+                .FirstOrDefault(n => string.Equals(
+                    n.Attribute("name")?.Value, notebookName, StringComparison.OrdinalIgnoreCase));
+            if (cursor == null) return null;
+
+            foreach (var sgName in sectionGroups)
+            {
+                cursor = cursor.Elements(ns + "SectionGroup")
+                    .FirstOrDefault(sg => string.Equals(
+                        sg.Attribute("name")?.Value, sgName, StringComparison.OrdinalIgnoreCase));
+                if (cursor == null) return null;
+            }
+
+            var section = cursor.Elements(ns + "Section")
+                .FirstOrDefault(s => string.Equals(
+                    s.Attribute("name")?.Value, sectionName, StringComparison.OrdinalIgnoreCase));
+            return section?.Attribute("ID")?.Value;
+        }
     }
 }

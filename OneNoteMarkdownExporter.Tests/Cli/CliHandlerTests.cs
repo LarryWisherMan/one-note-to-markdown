@@ -1,3 +1,5 @@
+using System.IO;
+using System.Threading.Tasks;
 using FluentAssertions;
 using OneNoteMarkdownExporter.Services;
 using Xunit;
@@ -388,6 +390,24 @@ public class CliHandlerTests
         var args = new[] { "--no-collapse" };
         var result = CliHandler.ShouldRunCli(args);
         result.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region Publish CLI Flag Tests
+
+    [Fact]
+    public async Task RunAsync_PublishWithMissingSource_ReturnsOne()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), "pts-does-not-exist-" + Path.GetRandomFileName());
+        var result = await CliHandler.RunAsync(new[] { "--publish", missing });
+        result.Should().Be(1);
+    }
+
+    [Fact]
+    public void ShouldRunCli_PublishFlag_IsRecognized()
+    {
+        CliHandler.ShouldRunCli(new[] { "--publish", "./notes" }).Should().BeTrue();
     }
 
     #endregion

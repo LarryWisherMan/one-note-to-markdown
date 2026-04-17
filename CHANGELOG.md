@@ -57,6 +57,16 @@ it.
   workflow, conventional-commit rules, GitVersion usage, code style,
   test expectations, and CHANGELOG discipline.
 - `CHANGELOG.md` (this file).
+- `--publish <source>` CLI command that walks a Markdown source tree and
+  creates one OneNote page per publishable file. Opt-in via an
+  `onenote:` front-matter block; bulk-publish via `--notebook <name>`.
+  Deterministic folder + filename-dot → `Notebook / SectionGroups… / Section /
+  Page` resolution rule; collision detection; numeric-segment warnings;
+  `--dry-run` supported. See
+  `docs/superpowers/specs/2026-04-16-folder-tree-mapping-design.md`.
+- `FindSectionIdByPath(notebook, sectionGroups[], section)` on
+  `OneNoteService` for nested-section-group navigation.
+- YamlDotNet dependency for parsing the minimum front-matter subset.
 
 ### Changed
 
