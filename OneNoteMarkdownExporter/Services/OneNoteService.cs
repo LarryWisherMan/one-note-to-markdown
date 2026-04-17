@@ -286,5 +286,69 @@ namespace OneNoteMarkdownExporter.Services
                     s.Attribute("name")?.Value, sectionName, StringComparison.OrdinalIgnoreCase));
             return section?.Attribute("ID")?.Value;
         }
+
+        /// <summary>
+        /// Resolves a section by explicit notebook → [section groups…] → section
+        /// path, creating any missing section groups and the leaf section when
+        /// <paramref name="createMissing"/> is true.
+        /// </summary>
+        /// <param name="dryRun">When true, reports "would create …" via
+        /// <paramref name="progress"/> but does not call OpenHierarchy.
+        /// Returns the resolved section ID if the section already exists, or
+        /// null if it would be created.</param>
+        /// <exception cref="NotebookNotFoundException">The named notebook does
+        /// not exist. Notebook-level auto-create is tracked by issue #19.</exception>
+        public string? EnsureSectionIdByPath(
+            string notebookName,
+            IReadOnlyList<string> sectionGroups,
+            string sectionName,
+            bool createMissing,
+            bool dryRun,
+            IProgress<string>? progress = null)
+        {
+            _oneNoteApp.GetHierarchy(null, HierarchyScope.hsSections, out string xml);
+
+            var plan = SectionHierarchyWalker.Plan(
+                xml, notebookName, sectionGroups, sectionName, createMissing);
+
+            if (plan.ExistingSectionId is { } existing)
+            {
+                return existing;
+            }
+
+            if (plan.IsUnresolved)
+            {
+                return null;
+            }
+
+            var parentId = plan.DeepestExistingAncestorId;
+            string? leafSectionId = null;
+
+            foreach (var step in plan.CreationSteps)
+            {
+                var verb = dryRun ? "would create" : "Created";
+                var kindLabel = step.Kind == CreationKind.SectionGroup
+                    ? "section group"
+                    : "section";
+                progress?.Report($"  {verb} {kindLabel}: {step.Name}");
+
+                if (dryRun) continue;
+
+                var fileType = step.Kind == CreationKind.SectionGroup
+                    ? CreateFileType.cftFolder
+                    : CreateFileType.cftSection;
+
+                _oneNoteApp.OpenHierarchy(
+                    step.TargetPath, parentId, out string newId, fileType);
+
+                parentId = newId;
+                if (step.Kind == CreationKind.Section)
+                {
+                    leafSectionId = newId;
+                }
+            }
+
+            return leafSectionId;
+        }
     }
 }
