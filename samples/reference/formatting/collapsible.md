@@ -1,3 +1,9 @@
+---
+title: "Collapsible Sections"
+onenote:
+  notebook: "{{Notebook}}"
+---
+
 # Project Documentation
 
 This is the top-level introduction. Everything below should nest under its heading.

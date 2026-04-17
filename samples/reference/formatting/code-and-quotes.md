@@ -1,3 +1,9 @@
+---
+title: "Code Blocks and Quotes"
+onenote:
+  notebook: "{{Notebook}}"
+---
+
 # Code Blocks and Quotes
 
 ## Inline Code

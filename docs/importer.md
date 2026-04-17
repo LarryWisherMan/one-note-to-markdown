@@ -179,6 +179,23 @@ section / page) is documented in detail in
 Files without an `onenote:` key and without a `--notebook` flag are silently
 skipped.
 
+### Samples corpus
+
+`samples/` in the repo is a minimal docs-repo layout demonstrating the
+conventions above: folder-inferred section groups, a dot-path file
+(`reference.api.endpoints.md`), an image via relative path, and a
+plain-markdown file with no `onenote:` key to verify silent skipping.
+
+To publish the corpus into a throwaway OneNote notebook for visual
+verification:
+
+```powershell
+./scripts/smoke-samples.ps1 -Notebook "SamplesDemo"
+```
+
+Add `-DryRun` to preview without writing. See the script's
+comment-help block for the full parameter list.
+
 ## Reference material
 
 `docs/reference-page/` contains the goldens we tune the converter against:

@@ -720,20 +720,20 @@ var x = 42;
     #region Sample File Tests
 
     [Theory]
-    [InlineData("basic-formatting.md", "Basic Formatting Test")]
-    [InlineData("lists-and-tables.md", "Lists and Tables")]
-    [InlineData("code-and-quotes.md", "Code Blocks and Quotes")]
-    [InlineData("collapsible-sections.md", "Project Documentation")]
-    public void Convert_SampleFile_ProducesValidXml(string filename, string expectedTitle)
+    [InlineData("reference/formatting/basic.md", "Basic Formatting Test")]
+    [InlineData("reference/formatting/lists-and-tables.md", "Lists and Tables")]
+    [InlineData("reference/formatting/code-and-quotes.md", "Code Blocks and Quotes")]
+    [InlineData("reference/formatting/collapsible.md", "Project Documentation")]
+    public void Convert_SampleFile_ProducesValidXml(string relativePath, string expectedTitle)
     {
         var samplesDir = Path.Combine(FindRepoRoot(), "samples");
-        var filePath = Path.Combine(samplesDir, filename);
+        var filePath = Path.Combine(samplesDir, relativePath);
 
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Sample file not found: {filePath}");
 
         var markdown = File.ReadAllText(filePath);
-        var result = _converter.Convert(markdown, basePath: samplesDir);
+        var result = _converter.Convert(markdown, basePath: Path.GetDirectoryName(filePath));
         var doc = ParseResult(result);
 
         doc.Root!.Name.Should().Be(OneNs + "Page");
@@ -747,13 +747,13 @@ var x = 42;
     public void Convert_SampleWithImage_EmbedsImageData()
     {
         var samplesDir = Path.Combine(FindRepoRoot(), "samples");
-        var filePath = Path.Combine(samplesDir, "with-image.md");
+        var filePath = Path.Combine(samplesDir, "examples", "with-image.md");
 
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Sample file not found: {filePath}");
 
         var markdown = File.ReadAllText(filePath);
-        var result = _converter.Convert(markdown, basePath: samplesDir);
+        var result = _converter.Convert(markdown, basePath: Path.GetDirectoryName(filePath));
         var doc = ParseResult(result);
 
         // Should have at least one embedded image
