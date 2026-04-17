@@ -44,7 +44,7 @@ public class SectionHierarchyWalkerTests
         plan.CreationSteps.Should().HaveCount(1);
         plan.CreationSteps[0].Kind.Should().Be(CreationKind.Section);
         plan.CreationSteps[0].Name.Should().Be("auth-spec");
-        plan.CreationSteps[0].TargetPath.Should().EndWith("API\\auth-spec.one");
+        plan.CreationSteps[0].TargetPath.Should().Be("auth-spec.one");
     }
 
     [Fact]
@@ -64,8 +64,10 @@ public class SectionHierarchyWalkerTests
         plan.CreationSteps.Should().HaveCount(2);
         plan.CreationSteps[0].Kind.Should().Be(CreationKind.SectionGroup);
         plan.CreationSteps[0].Name.Should().Be("API");
+        plan.CreationSteps[0].TargetPath.Should().Be("API");
         plan.CreationSteps[1].Kind.Should().Be(CreationKind.Section);
         plan.CreationSteps[1].Name.Should().Be("auth-spec");
+        plan.CreationSteps[1].TargetPath.Should().Be("auth-spec.one");
     }
 
     [Fact]
@@ -85,10 +87,13 @@ public class SectionHierarchyWalkerTests
         plan.CreationSteps.Should().HaveCount(3);
         plan.CreationSteps[0].Kind.Should().Be(CreationKind.SectionGroup);
         plan.CreationSteps[0].Name.Should().Be("Backend");
+        plan.CreationSteps[0].TargetPath.Should().Be("Backend");
         plan.CreationSteps[1].Kind.Should().Be(CreationKind.SectionGroup);
         plan.CreationSteps[1].Name.Should().Be("API");
+        plan.CreationSteps[1].TargetPath.Should().Be("API");
         plan.CreationSteps[2].Kind.Should().Be(CreationKind.Section);
         plan.CreationSteps[2].Name.Should().Be("auth-spec");
+        plan.CreationSteps[2].TargetPath.Should().Be("auth-spec.one");
     }
 
     [Fact]

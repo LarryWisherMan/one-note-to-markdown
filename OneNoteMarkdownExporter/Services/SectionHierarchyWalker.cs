@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -12,6 +11,17 @@ namespace OneNoteMarkdownExporter.Services;
 /// notebook → section-groups → section path and produces a
 /// <see cref="SectionResolutionPlan"/> describing what to do.
 /// </summary>
+/// <remarks>
+/// <see cref="CreationStep.TargetPath"/> is a <b>relative</b> name:
+/// a section-group folder name (e.g. <c>"Backend"</c>) or a section
+/// file name (e.g. <c>"auth-spec.one"</c>). When the executor calls
+/// <c>OpenHierarchy(targetPath, parentId, ...)</c> with a non-rooted
+/// path, OneNote resolves it relative to the parent's actual storage
+/// location. This form works for local notebooks and OneDrive-synced
+/// notebooks alike; concatenating the notebook's <c>path</c> attribute
+/// would mangle OneDrive URLs (e.g. <c>https://d.docs.live.net/…</c>)
+/// into invalid filesystem paths.
+/// </remarks>
 public static class SectionHierarchyWalker
 {
     private static readonly XNamespace OneNs =
@@ -31,7 +41,6 @@ public static class SectionHierarchyWalker
             ?? throw new NotebookNotFoundException(notebookName);
 
         var cursor = notebook;
-        var cursorPath = notebook.Attribute("path")?.Value ?? "";
         var creations = new List<CreationStep>();
         var sawMissing = false;
 
@@ -39,9 +48,8 @@ public static class SectionHierarchyWalker
         {
             if (sawMissing)
             {
-                cursorPath = Path.Combine(cursorPath, sgName);
                 creations.Add(new CreationStep(
-                    CreationKind.SectionGroup, sgName, cursorPath));
+                    CreationKind.SectionGroup, sgName, sgName));
                 continue;
             }
 
@@ -54,15 +62,12 @@ public static class SectionHierarchyWalker
                     return Unresolved();
 
                 sawMissing = true;
-                cursorPath = Path.Combine(cursorPath, sgName);
                 creations.Add(new CreationStep(
-                    CreationKind.SectionGroup, sgName, cursorPath));
+                    CreationKind.SectionGroup, sgName, sgName));
             }
             else
             {
                 cursor = child;
-                cursorPath = child.Attribute("path")?.Value
-                    ?? Path.Combine(cursorPath, sgName);
             }
         }
 
@@ -88,9 +93,8 @@ public static class SectionHierarchyWalker
 
         if (!createMissing) return Unresolved();
 
-        var sectionPath = Path.Combine(cursorPath, sectionName + ".one");
         creations.Add(new CreationStep(
-            CreationKind.Section, sectionName, sectionPath));
+            CreationKind.Section, sectionName, sectionName + ".one"));
 
         return new SectionResolutionPlan(
             ExistingSectionId: null,
