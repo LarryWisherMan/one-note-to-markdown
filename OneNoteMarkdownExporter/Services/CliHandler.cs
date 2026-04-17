@@ -163,17 +163,23 @@ namespace OneNoteMarkdownExporter.Services
             rootCommand.AddOption(createMissingOption);
             rootCommand.AddOption(noCreateMissingOption);
 
+            rootCommand.AddValidator(commandResult =>
+            {
+                var on = commandResult.GetValueForOption(createMissingOption);
+                var off = commandResult.GetValueForOption(noCreateMissingOption);
+                if (on && off)
+                {
+                    commandResult.ErrorMessage =
+                        "--create-missing and --no-create-missing are mutually exclusive.";
+                }
+            });
+
             rootCommand.SetHandler(async (context) =>
             {
                 var result = context.ParseResult;
 
                 static bool ResolveCreateMissing(bool on, bool off, bool subcommandDefault)
                 {
-                    if (on && off)
-                    {
-                        Console.Error.WriteLine("Error: --create-missing and --no-create-missing are mutually exclusive.");
-                        Environment.Exit(2);
-                    }
                     if (on) return true;
                     if (off) return false;
                     return subcommandDefault;
@@ -219,8 +225,8 @@ namespace OneNoteMarkdownExporter.Services
                         result.GetValueForOption(dryRunOption),
                         result.GetValueForOption(verboseOption),
                         result.GetValueForOption(quietOption),
-                        context.GetCancellationToken(),
-                        createMissing: createMissing);
+                        createMissing: createMissing,
+                        cancellationToken: context.GetCancellationToken());
                     context.ExitCode = exitCode;
                     return;
                 }
@@ -433,8 +439,8 @@ namespace OneNoteMarkdownExporter.Services
             bool dryRun,
             bool verbose,
             bool quiet,
-            CancellationToken cancellationToken,
-            bool createMissing)
+            bool createMissing,
+            CancellationToken cancellationToken)
         {
             var parts = importTarget.Split('/');
             if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
