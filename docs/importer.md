@@ -79,6 +79,19 @@ blockquote, HR). These render as blank lines. Remove them and everything
 collapses into a wall of text; see the before/after in
 `docs/reference-page/Results_1.png` vs `Results_2.png`.
 
+### Spell-check suppression
+
+Every imported or published page is emitted with `lang="yo"` on both
+`<one:Page>` and `<one:Title>`. OneNote has no proofing dictionary for
+Yoruba, so the page renders without red squiggles — useful for
+technical content (code snippets, CLI flags, variable names) that
+would otherwise be flagged as misspellings.
+
+To re-enable spell-check for a specific language on a published page,
+open it in OneNote and use `Review → Language → Set Proofing Language`.
+A front-matter-driven per-page override is tracked separately (see
+issue #3).
+
 ### Collapsible headings
 
 By default (`--import` without `--no-collapse`), content between headings

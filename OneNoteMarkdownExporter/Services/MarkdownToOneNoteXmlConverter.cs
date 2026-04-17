@@ -49,6 +49,15 @@ public class MarkdownToOneNoteXmlConverter
     private const string StrikeSpanOpen = "<span style='text-decoration:line-through'>";
     private const string SpanClose = "</span>";
 
+    // Yoruba — the Onetastic "No Spell Check" macro pattern:
+    // OneNote has no dictionary for this tag, so the proofing pipeline
+    // stays silent. See https://getonetastic.com/macro/no-spell-check
+    // and docs/reference-page/Reference-page.xml, which also carries
+    // lang="yo" on <one:Page> and <one:Title>. Candidates "und" / "zxx"
+    // are semantically cleaner BCP 47 values but unverified against
+    // the real OneNote proofing pipeline in this repo.
+    private const string SpellCheckSuppressionLang = "yo";
+
     /// <summary>
     /// Base path used to resolve relative image paths during a conversion call.
     /// </summary>
@@ -82,7 +91,8 @@ public class MarkdownToOneNoteXmlConverter
         // Build the page XML with explicit one: prefix (required by OneNote COM API)
         var page = new XElement(OneNs + "Page",
             new XAttribute(XNamespace.Xmlns + "one", OneNs.NamespaceName),
-            new XAttribute("name", resolvedTitle));
+            new XAttribute("name", resolvedTitle),
+            new XAttribute("lang", SpellCheckSuppressionLang));
 
         // QuickStyleDefs map heading levels to OneNote's native style rendering.
         // Must come before Title per OneNote's schema ordering.
@@ -93,6 +103,7 @@ public class MarkdownToOneNoteXmlConverter
 
         page.Add(new XElement(OneNs + "Title",
                 new XAttribute("quickStyleIndex", QuickStylePageTitle),
+                new XAttribute("lang", SpellCheckSuppressionLang),
                 new XElement(OneNs + "OE",
                     new XElement(OneNs + "T",
                         new XCData(resolvedTitle)))));

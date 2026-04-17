@@ -911,4 +911,32 @@ var x = 42;
     }
 
     #endregion
+
+    #region Spell-check suppression
+
+    [Fact]
+    public void Convert_EmitsLangYoOnPage_ToSuppressSpellCheck()
+    {
+        var result = _converter.Convert("body", pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var langAttr = doc.Root!.Attribute("lang");
+        langAttr.Should().NotBeNull();
+        langAttr!.Value.Should().Be("yo");
+    }
+
+    [Fact]
+    public void Convert_EmitsLangYoOnTitle_ToSuppressSpellCheck()
+    {
+        var result = _converter.Convert("body", pageTitle: "Test");
+        var doc = ParseResult(result);
+
+        var title = doc.Root!.Element(OneNs + "Title");
+        title.Should().NotBeNull();
+        var langAttr = title!.Attribute("lang");
+        langAttr.Should().NotBeNull();
+        langAttr!.Value.Should().Be("yo");
+    }
+
+    #endregion
 }
