@@ -338,6 +338,16 @@ namespace OneNoteMarkdownExporter.Services
                     ? CreateFileType.cftFolder
                     : CreateFileType.cftSection;
 
+                // OpenHierarchy returns 0x80042006 (hrFileDoesNotExist) when the
+                // parent directory isn't on disk yet. OneNote creates section-group
+                // metadata without materializing the folder, so nested creations
+                // must pre-create it. Mirrors the workaround in PublishPage.
+                var parentDir = System.IO.Path.GetDirectoryName(step.TargetPath);
+                if (!string.IsNullOrEmpty(parentDir) && !System.IO.Directory.Exists(parentDir))
+                {
+                    System.IO.Directory.CreateDirectory(parentDir);
+                }
+
                 _oneNoteApp.OpenHierarchy(
                     step.TargetPath, parentId, out string newId, fileType);
 

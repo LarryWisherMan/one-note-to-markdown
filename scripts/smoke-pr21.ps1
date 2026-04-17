@@ -72,10 +72,31 @@ function Invoke-Exe {
     param([string[]]$Arguments, [string]$Description)
     Write-Host "`n> $Description" -ForegroundColor Yellow
     Write-Host "  command: $exe $($Arguments -join ' ')" -ForegroundColor DarkGray
-    & $exe @Arguments
-    $code = $LASTEXITCODE
-    Write-Host "  exit code: $code" -ForegroundColor DarkGray
-    return $code
+
+    # OneNoteMarkdownExporter is a WPF <OutputType>WinExe</OutputType> app,
+    # so `& $exe` returns immediately (detached from the console) and
+    # $LASTEXITCODE reflects "launched" (0), not the real exit code.
+    # Redirect stdout/stderr to temp files and use Start-Process -Wait so
+    # we actually block and read the real exit code.
+    $stdoutFile = [System.IO.Path]::GetTempFileName()
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try
+    {
+        $proc = Start-Process -FilePath $exe -ArgumentList $Arguments `
+            -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+        $stdout = Get-Content -Path $stdoutFile -Raw
+        $stderr = Get-Content -Path $stderrFile -Raw
+        if ($stdout) { Write-Host $stdout }
+        if ($stderr) { Write-Host $stderr -ForegroundColor Red }
+        Write-Host "  exit code: $($proc.ExitCode)" -ForegroundColor DarkGray
+        return $proc.ExitCode
+    }
+    finally
+    {
+        Remove-Item -Path $stdoutFile, $stderrFile -ErrorAction SilentlyContinue
+    }
 }
 
 function Pause-For-Inspection {
