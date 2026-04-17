@@ -54,6 +54,13 @@ if ([string]::IsNullOrWhiteSpace($Notebook)) {
     throw "-Notebook cannot be empty or whitespace."
 }
 
+if ($Notebook.Contains('"')) {
+    # Substitution replaces the placeholder inside a quoted YAML scalar
+    # (notebook: "{{Notebook}}"). A literal double-quote in the notebook
+    # name would break out of the scalar and produce invalid front-matter.
+    throw "-Notebook must not contain a double-quote character."
+}
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $samplesSrc = Join-Path $repoRoot 'samples'
 $exe = Join-Path $repoRoot 'OneNoteMarkdownExporter/bin/Debug/net10.0-windows/OneNoteMarkdownExporter.exe'
@@ -93,13 +100,20 @@ Read-Host "OneNote desktop running? Ctrl+C to abort, Enter to continue"
 
 Copy-Item -Recurse -Path $samplesSrc -Destination $scratch
 
+# samples/output/ is a gitignored dir of stale converter test artifacts.
+# Drop it from the scratch copy so nothing in it gets walked or substituted.
+$scratchOutput = Join-Path $scratch 'output'
+if (Test-Path $scratchOutput) {
+    Remove-Item -Path $scratchOutput -Recurse -Force
+}
+
 $mdFiles = Get-ChildItem -Path $scratch -Recurse -Filter '*.md' -File
 $substitutedCount = 0
 foreach ($file in $mdFiles) {
     $content = Get-Content -Path $file.FullName -Raw
     $replaced = $content.Replace('{{Notebook}}', $Notebook)
     if ($replaced -ne $content) {
-        Set-Content -Path $file.FullName -Value $replaced -NoNewline
+        Set-Content -Path $file.FullName -Value $replaced -NoNewline -Encoding UTF8
         $substitutedCount++
     }
 }
@@ -157,7 +171,8 @@ else {
     Write-Host "Live publish FAILED (exit $exitCode). Scratch kept for debugging." -ForegroundColor Red
 }
 
-$keepAnyway = $KeepScratch -or $DryRun -or ($exitCode -ne 0 -and -not $DryRun)
+$failed = $exitCode -ne 0
+$keepAnyway = $KeepScratch -or $DryRun -or $failed
 if (-not $keepAnyway) {
     Remove-Item -Path $scratch -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "Scratch removed: $scratch" -ForegroundColor DarkGray
