@@ -920,7 +920,9 @@ var x = 42;
         var result = _converter.Convert("body", pageTitle: "Test");
         var doc = ParseResult(result);
 
-        doc.Root!.Attribute("lang")?.Value.Should().Be("yo");
+        var langAttr = doc.Root!.Attribute("lang");
+        langAttr.Should().NotBeNull();
+        langAttr!.Value.Should().Be("yo");
     }
 
     [Fact]
@@ -931,7 +933,9 @@ var x = 42;
 
         var title = doc.Root!.Element(OneNs + "Title");
         title.Should().NotBeNull();
-        title!.Attribute("lang")?.Value.Should().Be("yo");
+        var langAttr = title!.Attribute("lang");
+        langAttr.Should().NotBeNull();
+        langAttr!.Value.Should().Be("yo");
     }
 
     #endregion
