@@ -34,6 +34,7 @@ a new page on each run — it does not overwrite.
 | `--import <Notebook/Section>` | Target path. Must be exactly two segments separated by `/`. |
 | `--file <path>...` | One or more Markdown files to import. |
 | `--no-collapse` | Emit headings as siblings rather than nesting content inside a heading's `OEChildren`. |
+| `--create-missing` | With `--import`: create the target section (and any section groups between it and the notebook) if it doesn't exist. Default: off. |
 | `--dry-run` | Parse and convert but do not call OneNote. |
 | `--verbose` / `--quiet` | Standard logging flags. |
 
@@ -135,6 +136,21 @@ OneNoteMarkdownExporter.exe --publish ./notes --notebook "Work Notes"
 # Preview what would publish — no OneNote calls.
 OneNoteMarkdownExporter.exe --publish ./notes --dry-run --verbose
 ```
+
+### Auto-create missing sections
+
+By default, `--publish` auto-creates any section group or section in a
+resolved target path that doesn't yet exist in OneNote — the tree walks
+and the importer does `mkdir -p` on the OneNote side. To require the
+full target path to exist (and error if anything is missing), pass
+`--no-create-missing`.
+
+`--import` is the opposite — it errors on a missing section unless you
+explicitly opt in with `--create-missing`.
+
+Creating a missing **notebook** is not yet supported; the publisher
+errors with a link to [issue #19](https://github.com/LarryWisherMan/one-note-to-markdown/issues/19).
+Create the notebook manually in OneNote and retry.
 
 The resolution rule (folder path + front-matter + CLI flag → target notebook /
 section / page) is documented in detail in

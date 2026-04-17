@@ -11,5 +11,12 @@ namespace OneNoteMarkdownExporter.Services
         public bool DryRun { get; set; } = false;
         public bool Verbose { get; set; } = false;
         public bool Quiet { get; set; } = false;
+
+        /// <summary>
+        /// When true and the target section does not exist, create missing
+        /// section groups and the leaf section before importing. Default false —
+        /// <c>--import</c> is surgical; a missing target is usually a typo.
+        /// </summary>
+        public bool CreateMissing { get; set; } = false;
     }
 }

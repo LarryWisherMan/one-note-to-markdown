@@ -286,5 +286,82 @@ namespace OneNoteMarkdownExporter.Services
                     s.Attribute("name")?.Value, sectionName, StringComparison.OrdinalIgnoreCase));
             return section?.Attribute("ID")?.Value;
         }
+
+        /// <summary>
+        /// Resolves a section by explicit notebook → [section groups…] → section
+        /// path, creating any missing section groups and the leaf section when
+        /// <paramref name="createMissing"/> is true.
+        /// </summary>
+        /// <param name="dryRun">When true, reports "would create …" via
+        /// <paramref name="progress"/> but does not call OpenHierarchy.
+        /// Returns the resolved section ID if the section already exists, or
+        /// null if it would be created.</param>
+        /// <exception cref="NotebookNotFoundException">The named notebook does
+        /// not exist. Notebook-level auto-create is tracked by issue #19.</exception>
+        public string? EnsureSectionIdByPath(
+            string notebookName,
+            IReadOnlyList<string> sectionGroups,
+            string sectionName,
+            bool createMissing,
+            bool dryRun,
+            IProgress<string>? progress = null)
+        {
+            _oneNoteApp.GetHierarchy(null, HierarchyScope.hsSections, out string xml);
+
+            var plan = SectionHierarchyWalker.Plan(
+                xml, notebookName, sectionGroups, sectionName, createMissing);
+
+            if (plan.ExistingSectionId is { } existing)
+            {
+                return existing;
+            }
+
+            if (plan.IsUnresolved)
+            {
+                return null;
+            }
+
+            var parentId = plan.DeepestExistingAncestorId;
+            string? leafSectionId = null;
+
+            foreach (var step in plan.CreationSteps)
+            {
+                var verb = dryRun ? "Would create" : "Created";
+                var kindLabel = step.Kind == CreationKind.SectionGroup
+                    ? "section group"
+                    : "section";
+                progress?.Report($"  {verb} {kindLabel}: {step.Name}");
+
+                if (dryRun) continue;
+
+                var fileType = step.Kind == CreationKind.SectionGroup
+                    ? CreateFileType.cftFolder
+                    : CreateFileType.cftSection;
+
+                // OpenHierarchy returns 0x80042006 (hrFileDoesNotExist) when the
+                // parent directory isn't on disk yet. OneNote creates section-group
+                // metadata without materializing the folder, so nested creations
+                // must pre-create it. Mirrors the workaround in PublishPage.
+                var parentDir = System.IO.Path.GetDirectoryName(step.TargetPath);
+                if (!string.IsNullOrEmpty(parentDir) && !System.IO.Directory.Exists(parentDir))
+                {
+                    System.IO.Directory.CreateDirectory(parentDir);
+                }
+
+                _oneNoteApp.OpenHierarchy(
+                    step.TargetPath, parentId, out string newId, fileType);
+
+                parentId = newId;
+                if (step.Kind == CreationKind.Section)
+                {
+                    leafSectionId = newId;
+                }
+            }
+
+            // Walker contract: when creation is needed, the plan always ends
+            // with a CreationKind.Section step — so leafSectionId is non-null
+            // on return in live mode. Dry-run returns null (no IDs created).
+            return leafSectionId;
+        }
     }
 }

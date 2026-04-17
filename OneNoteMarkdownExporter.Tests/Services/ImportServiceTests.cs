@@ -31,6 +31,13 @@ public class ImportOptionsTests
         var options = new ImportOptions();
         options.DryRun.Should().BeFalse();
     }
+
+    [Fact]
+    public void CreateMissing_DefaultsToFalse()
+    {
+        var options = new ImportOptions();
+        options.CreateMissing.Should().BeFalse();
+    }
 }
 
 public class ImportResultTests

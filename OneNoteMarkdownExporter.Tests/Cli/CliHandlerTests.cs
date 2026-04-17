@@ -410,5 +410,19 @@ public class CliHandlerTests
         CliHandler.ShouldRunCli(new[] { "--publish", "./notes" }).Should().BeTrue();
     }
 
+    [Fact]
+    public void ShouldRunCli_WithCreateMissingFlag_ReturnsTrue()
+    {
+        var args = new[] { "--publish", "./notes", "--create-missing" };
+        CliHandler.ShouldRunCli(args).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunCli_WithNoCreateMissingFlag_ReturnsTrue()
+    {
+        var args = new[] { "--publish", "./notes", "--no-create-missing" };
+        CliHandler.ShouldRunCli(args).Should().BeTrue();
+    }
+
     #endregion
 }

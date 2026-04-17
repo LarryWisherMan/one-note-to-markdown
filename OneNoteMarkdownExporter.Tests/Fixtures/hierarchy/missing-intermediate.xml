@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<one:Notebooks xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote">
+  <one:Notebook name="Work Notes" ID="{NB}{1}{B0}" path="C:\Users\Test\Documents\OneNote Notebooks\Work Notes\">
+    <one:SectionGroup name="Backend" ID="{SG-B}{1}{B0}" path="C:\Users\Test\Documents\OneNote Notebooks\Work Notes\Backend\"/>
+  </one:Notebook>
+</one:Notebooks>

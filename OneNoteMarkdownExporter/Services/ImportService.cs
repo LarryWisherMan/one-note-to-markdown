@@ -23,18 +23,45 @@ namespace OneNoteMarkdownExporter.Services
         {
             var result = new ImportResult { TotalFiles = options.FilePaths.Count };
 
-            string? sectionId = null;
-            if (!options.DryRun)
+            // First: recursive lookup (legacy behavior — find the section
+            // anywhere under the notebook, regardless of section-group depth).
+            string? sectionId = options.DryRun
+                ? null
+                : _oneNoteService.FindSectionId(options.NotebookName, options.SectionName);
+
+            // Second: if not found and --create-missing, fall through to the
+            // path-based ensure (creates the section as a direct child of the
+            // notebook).
+            if (sectionId is null && options.CreateMissing)
             {
-                sectionId = _oneNoteService.FindSectionId(options.NotebookName, options.SectionName);
-                if (sectionId == null)
+                try
                 {
-                    var error = $"Section not found: {options.NotebookName}/{options.SectionName}";
-                    result.Errors.Add(error);
+                    sectionId = _oneNoteService.EnsureSectionIdByPath(
+                        options.NotebookName,
+                        sectionGroups: Array.Empty<string>(),
+                        options.SectionName,
+                        createMissing: true,
+                        dryRun: options.DryRun,
+                        progress: progress);
+                }
+                catch (NotebookNotFoundException ex)
+                {
+                    result.Errors.Add(ex.Message);
                     result.FailedPages = result.TotalFiles;
-                    progress?.Report($"Error: {error}");
+                    progress?.Report($"Error: {ex.Message}");
                     return result;
                 }
+            }
+
+            // Finally: error on miss (unless dry-run).
+            if (sectionId is null && !options.DryRun)
+            {
+                var error = $"Section not found: {options.NotebookName}/{options.SectionName}. " +
+                            "Pass --create-missing to create it automatically.";
+                result.Errors.Add(error);
+                result.FailedPages = result.TotalFiles;
+                progress?.Report($"Error: {error}");
+                return result;
             }
 
             await Task.Run(() =>

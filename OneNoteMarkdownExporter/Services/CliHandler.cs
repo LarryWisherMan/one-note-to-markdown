@@ -42,6 +42,7 @@ namespace OneNoteMarkdownExporter.Services
                 "--overwrite", "--no-lint", "--lint-config",
                 "--list", "--dry-run", "--verbose", "-v", "--quiet", "-q",
                 "--import", "--file", "--no-collapse", "--publish",
+                "--create-missing", "--no-create-missing",
                 "--help", "-h", "-?", "--version"
             };
 
@@ -134,6 +135,14 @@ namespace OneNoteMarkdownExporter.Services
                 "--publish",
                 "Walk a Markdown source tree and publish every opt-in file to OneNote.");
 
+            var createMissingOption = new Option<bool>(
+                "--create-missing",
+                "Auto-create missing target sections and section groups.");
+
+            var noCreateMissingOption = new Option<bool>(
+                "--no-create-missing",
+                "Disable auto-create of missing sections/section groups.");
+
             // Add options to command
             rootCommand.AddOption(allOption);
             rootCommand.AddOption(notebookOption);
@@ -151,10 +160,30 @@ namespace OneNoteMarkdownExporter.Services
             rootCommand.AddOption(fileOption);
             rootCommand.AddOption(noCollapseOption);
             rootCommand.AddOption(publishOption);
+            rootCommand.AddOption(createMissingOption);
+            rootCommand.AddOption(noCreateMissingOption);
+
+            rootCommand.AddValidator(commandResult =>
+            {
+                var on = commandResult.GetValueForOption(createMissingOption);
+                var off = commandResult.GetValueForOption(noCreateMissingOption);
+                if (on && off)
+                {
+                    commandResult.ErrorMessage =
+                        "--create-missing and --no-create-missing are mutually exclusive.";
+                }
+            });
 
             rootCommand.SetHandler(async (context) =>
             {
                 var result = context.ParseResult;
+
+                static bool ResolveCreateMissing(bool on, bool off, bool subcommandDefault)
+                {
+                    if (on) return true;
+                    if (off) return false;
+                    return subcommandDefault;
+                }
 
                 var publishSource = result.GetValueForOption(publishOption);
                 if (!string.IsNullOrEmpty(publishSource))
@@ -162,13 +191,19 @@ namespace OneNoteMarkdownExporter.Services
                     var notebooks = result.GetValueForOption(notebookOption);
                     var cliNotebook = notebooks is { Length: > 0 } ? notebooks[0] : null;
 
+                    var createMissing = ResolveCreateMissing(
+                        on: result.GetValueForOption(createMissingOption),
+                        off: result.GetValueForOption(noCreateMissingOption),
+                        subcommandDefault: true);
+
                     var exitCode = await ExecutePublishTreeAsync(
                         publishSource,
                         cliNotebook,
                         collapsible: !result.GetValueForOption(noCollapseOption),
                         dryRun: result.GetValueForOption(dryRunOption),
                         verbose: result.GetValueForOption(verboseOption),
-                        quiet: result.GetValueForOption(quietOption));
+                        quiet: result.GetValueForOption(quietOption),
+                        createMissing: createMissing);
                     context.ExitCode = exitCode;
                     return;
                 }
@@ -178,6 +213,11 @@ namespace OneNoteMarkdownExporter.Services
 
                 if (!string.IsNullOrEmpty(importTarget))
                 {
+                    var createMissing = ResolveCreateMissing(
+                        on: result.GetValueForOption(createMissingOption),
+                        off: result.GetValueForOption(noCreateMissingOption),
+                        subcommandDefault: false);
+
                     var exitCode = await ExecuteImportAsync(
                         importTarget,
                         importFiles,
@@ -185,7 +225,8 @@ namespace OneNoteMarkdownExporter.Services
                         result.GetValueForOption(dryRunOption),
                         result.GetValueForOption(verboseOption),
                         result.GetValueForOption(quietOption),
-                        context.GetCancellationToken());
+                        createMissing: createMissing,
+                        cancellationToken: context.GetCancellationToken());
                     context.ExitCode = exitCode;
                     return;
                 }
@@ -307,7 +348,8 @@ namespace OneNoteMarkdownExporter.Services
             bool collapsible,
             bool dryRun,
             bool verbose,
-            bool quiet)
+            bool quiet,
+            bool createMissing)
         {
             if (!Directory.Exists(sourceDir))
             {
@@ -323,6 +365,7 @@ namespace OneNoteMarkdownExporter.Services
                 DryRun = dryRun,
                 Verbose = verbose,
                 Quiet = quiet,
+                CreateMissing = createMissing,
             };
 
             if (!quiet)
@@ -396,6 +439,7 @@ namespace OneNoteMarkdownExporter.Services
             bool dryRun,
             bool verbose,
             bool quiet,
+            bool createMissing,
             CancellationToken cancellationToken)
         {
             var parts = importTarget.Split('/');
@@ -442,7 +486,8 @@ namespace OneNoteMarkdownExporter.Services
                 Collapsible = collapsible,
                 DryRun = dryRun,
                 Verbose = verbose,
-                Quiet = quiet
+                Quiet = quiet,
+                CreateMissing = createMissing
             };
 
             var progress = new Progress<string>(message =>
@@ -480,6 +525,13 @@ namespace OneNoteMarkdownExporter.Services
                     if (result.FailedPages > 0)
                     {
                         Console.WriteLine($"  Pages failed: {result.FailedPages}");
+                        // Progress<T> is async; a Report("Error: …") call right before an
+                        // early-return can lose the race against the summary. Dump the
+                        // error list here so the user always sees why it failed.
+                        foreach (var error in result.Errors)
+                        {
+                            Console.Error.WriteLine($"  {error}");
+                        }
                     }
                 }
 
